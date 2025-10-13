@@ -28,6 +28,7 @@ interface CreateCompanyData {
 interface UseCompanyResult {
     getAllCompay: () => Promise<Company[]>;
     createCompany: (data: CreateCompanyData) => Promise<Company>;
+    deleteCompany: (companyId: string) => Promise<any>;
     isLoading: boolean;
     error: string | null;
 }
@@ -39,10 +40,10 @@ export const useCompany = (): UseCompanyResult => {
     const getAllCompay = async (): Promise<Company[]> => {
         setIsLoading(true);
         setError(null);
-        
+
         try {
             console.log('🔄 [HOOK] Obteniendo empresas...');
-            
+
             const response = await fetch('/api/admin/companies', {
                 method: 'GET',
                 credentials: 'include',
@@ -53,20 +54,20 @@ export const useCompany = (): UseCompanyResult => {
             if (!response.ok) {
                 const errorText = await response.text();
                 let errorMessage = 'Error al obtener empresas';
-                
+
                 try {
                     const errorData = JSON.parse(errorText);
                     errorMessage = errorData.error || errorMessage;
                 } catch {
                     errorMessage = errorText || `Error ${response.status}`;
                 }
-                
+
                 throw new Error(errorMessage);
             }
 
             const companies = await response.json();
             console.log('✅ [HOOK] Empresas obtenidas:', companies);
-            
+
             return companies;
 
         } catch (err) {
@@ -82,10 +83,10 @@ export const useCompany = (): UseCompanyResult => {
     const createCompany = async (data: CreateCompanyData): Promise<Company> => {
         setIsLoading(true);
         setError(null);
-        
+
         try {
             console.log('🔄 [HOOK] Creando empresa...', data);
-            
+
             const response = await fetch('/api/admin/companies', {
                 method: 'POST',
                 headers: {
@@ -100,20 +101,20 @@ export const useCompany = (): UseCompanyResult => {
             if (!response.ok) {
                 const errorText = await response.text();
                 let errorMessage = 'Error al crear empresa';
-                
+
                 try {
                     const errorData = JSON.parse(errorText);
                     errorMessage = errorData.error || errorMessage;
                 } catch {
                     errorMessage = errorText || `Error ${response.status}`;
                 }
-                
+
                 throw new Error(errorMessage);
             }
 
             const newCompany = await response.json();
             console.log('✅ [HOOK] Empresa creada:', newCompany);
-            
+
             return newCompany;
 
         } catch (err) {
@@ -126,10 +127,44 @@ export const useCompany = (): UseCompanyResult => {
         }
     }
 
-    return { 
-        getAllCompay, 
+    const deleteCompany = async (companyId: string): Promise<any> => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            console.log('🗑️ [HOOK] Eliminando empresa:', companyId);
+
+            const response = await fetch(`/api/admin/companies/${companyId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+
+            console.log('📥 [HOOK] Response status:', response.status);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Error al eliminar empresa');
+            }
+
+            const result = await response.json();
+            console.log('✅ [HOOK] Empresa eliminada exitosamente:', result);
+            return result;
+
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            console.error('💥 [HOOK] Error en deleteCompany:', err);
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return {
+        getAllCompay,
         createCompany,
-        isLoading, 
-        error 
+        deleteCompany,
+        isLoading,
+        error
     };
 }

@@ -8,22 +8,23 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Building2 } from "lucide-react"
+import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Building2, EllipsisVertical } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateCompanyForm } from "../../components/ModalComponents/createCompany"
 import { useCompany } from "@/app/presentation/hooks/Company/useCompany"
+import CompanyActionsMenu from "./ActionsMenu/CompanyActionsMenu"
 
 interface Company {
-    id: string;
-    name: string;
-    nit: string;
-    email: string;
-    dian: string;
-    firma: string;
-    usuario: string;
-    servidorCorreo: string;
-    tipo: string;
-    contraseña: string;
+  id: string;
+  name: string;
+  nit: string;
+  email: string;
+  dian: string;
+  firma: string;
+  usuario: string;
+  servidorCorreo: string;
+  tipo: string;
+  contraseña: string;
 }
 
 export function CompanyList() {
@@ -32,9 +33,10 @@ export function CompanyList() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [companies, setCompanies] = useState<Company[]>([])
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const itemsPerPage = 10
 
-  const  { getAllCompay, isLoading, createCompany } = useCompany();
+  const { getAllCompay, isLoading, createCompany, deleteCompany } = useCompany();
 
   useEffect(() => {
     loadCompanies()
@@ -109,6 +111,7 @@ export function CompanyList() {
               <TableHead className="text-muted-foreground font-medium">Servidor Correo</TableHead>
               <TableHead className="text-muted-foreground font-medium">Tipo</TableHead>
               <TableHead className="text-muted-foreground font-medium">Creada</TableHead>
+              <TableHead className="text-muted-foreground font-medium"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -140,6 +143,30 @@ export function CompanyList() {
                   </Badge>
                 </TableCell>
                 {/* <TableCell className="text-muted-foreground">{company.created || 'na'}</TableCell> */}
+                <TableCell>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const newOpenMenuId = openMenuId === company.id ? null : company.id;
+                        setOpenMenuId(newOpenMenuId);
+                      }}
+                      className="p-1 rounded hover:bg-secondary/50 transition-colors"
+                    >
+                      <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
+                    </button>
+
+                    {/* Menú flotante para este usuario */}
+                    {openMenuId === company.id && (
+                      <CompanyActionsMenu
+                        companyId={company.id}
+                        isOpen={true}
+                        onClose={() => setOpenMenuId(null)}
+                        onCompanyDeleted={loadCompanies}
+                      />
+                    )}
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
