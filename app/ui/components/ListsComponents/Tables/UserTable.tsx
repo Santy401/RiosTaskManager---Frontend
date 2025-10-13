@@ -12,6 +12,7 @@ import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, EllipsisVerti
 import { SlideModal } from "../../ModalComponents/slideModal"
 import { AddUserForm } from "../../ModalComponents/createUser"
 import { useUser } from "@/app/presentation/hooks/User/useUser"
+import UserActionsMenu from "./UserActionsMenu"
 
 interface User {
   id: string;
@@ -30,23 +31,25 @@ export function UsersTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
-  
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
+
   const { getAllUsers, isLoading, error } = useUser()
 
   useEffect(() => {
     loadUsers()
   }, [])
 
-const loadUsers = async () => {
-  try {
-    console.log('📋 [TABLE] Cargando usuarios...');
-    const usersData = await getAllUsers();
-    console.log('✅ [TABLE] Usuarios cargados en estado:', usersData);
-    setUsers(usersData);
-  } catch (err) {
-    console.error('💥 [TABLE] Error cargando usuarios:', err);
-  }
-};
+  const loadUsers = async () => {
+    try {
+      console.log('📋 [TABLE] Cargando usuarios...');
+      const usersData = await getAllUsers();
+      console.log('✅ [TABLE] Usuarios cargados en estado:', usersData);
+      setUsers(usersData);
+    } catch (err) {
+      console.error('💥 [TABLE] Error cargando usuarios:', err);
+    }
+  };
 
   const handleAddUser = async (data: any) => {
     try {
@@ -97,8 +100,8 @@ const loadUsers = async () => {
             <span className="text-sm text-foreground">Marcar Emails</span>
           </div>
         </div>
-        <Button 
-          className="bg-primary text-primary-foreground hover:bg-primary/90" 
+        <Button
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={() => setIsModalOpen(true)}
           disabled={isLoading}
         >
@@ -154,7 +157,39 @@ const loadUsers = async () => {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{user.created || "N/A"}</TableCell>
                 <TableCell className="text-muted-foreground">{user.lastActive || "N/A"}</TableCell>
-                <TableCell className="text-white cursor-pointer"><EllipsisVertical /></TableCell>
+                <TableCell>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const newOpenMenuId = openMenuId === user.id ? null : user.id;
+
+                        if (newOpenMenuId) {
+                          setMenuPosition({
+                            top: rect.bottom + window.scrollY,
+                            left: rect.left + window.scrollX,
+                          });
+                        }
+
+                        setOpenMenuId(newOpenMenuId);
+                      }}
+                      className="p-1 rounded hover:bg-secondary/50 transition-colors"
+                    >
+                      <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
+                    </button>
+
+                    {/* Menú flotante para este usuario */}
+                    {openMenuId === user.id && menuPosition && (
+                      <UserActionsMenu
+                        userId={user.id}
+                        isOpen={true}
+                        onClose={() => setOpenMenuId(null)}
+                        onUserDeleted={loadUsers} 
+                        position={menuPosition}
+                      />
+                    )}
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

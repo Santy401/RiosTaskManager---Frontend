@@ -101,6 +101,14 @@ export async function POST(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+
+  } catch {
+
+  }
+}
+
 async function checkIfUserExists(email: string) {
   // Tu lógica para verificar en la base de datos
   // Ejemplo con MongoDB:
