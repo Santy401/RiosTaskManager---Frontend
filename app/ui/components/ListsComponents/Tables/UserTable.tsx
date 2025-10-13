@@ -8,7 +8,7 @@ import { Badge } from "@/app/ui/components/badge"
 import { Switch } from "@/app/ui/components/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight } from "lucide-react"
+import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, EllipsisVertical } from "lucide-react"
 import { SlideModal } from "../../ModalComponents/slideModal"
 import { AddUserForm } from "../../ModalComponents/createUser"
 import { useUser } from "@/app/presentation/hooks/User/useUser"
@@ -31,7 +31,7 @@ export function UsersTable() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   
-  const { getAllUsers, createUser, isLoading, error } = useUser()
+  const { getAllUsers, isLoading, error } = useUser()
 
   useEffect(() => {
     loadUsers()
@@ -50,7 +50,6 @@ const loadUsers = async () => {
 
   const handleAddUser = async (data: any) => {
     try {
-      await createUser(data)
       await loadUsers()
       setIsModalOpen(false)
     } catch (err) {
@@ -119,6 +118,7 @@ const loadUsers = async () => {
               <TableHead className="text-muted-foreground font-medium">Rol</TableHead>
               <TableHead className="text-muted-foreground font-medium">Creado</TableHead>
               <TableHead className="text-muted-foreground font-medium">Activo</TableHead>
+              <TableHead className="text-muted-foreground font-medium"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -154,6 +154,7 @@ const loadUsers = async () => {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{user.created || "N/A"}</TableCell>
                 <TableCell className="text-muted-foreground">{user.lastActive || "N/A"}</TableCell>
+                <TableCell className="text-white cursor-pointer"><EllipsisVertical /></TableCell>
               </TableRow>
             ))}
           </TableBody>

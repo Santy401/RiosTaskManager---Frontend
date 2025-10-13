@@ -30,27 +30,9 @@ export function AddUserForm({ onSubmit, onCancel }: AddUserFormProps) {
     e.preventDefault()
 
     try {
-      const newUser = await createUser({
-        name: formData.name,
-        email: formData.email,
-        role: formData.role ? formData.role.toLowerCase() : 'user',
-        password: formData.password,
-      })
-
-      // Llamar a onSubmit para notificar éxito (ej. cerrar modal o refrescar lista)
-      onSubmit(newUser)
-
-      // Resetear formulario
-      setFormData({
-        name: "",
-        email: "",
-        role: "USER",
-        password: "",
-        verified: false,
-        sendEmail: true,
-      })
+      const newUser = await createUser(formData);
+      onSubmit(newUser);
     } catch (err) {
-      // El error ya se maneja en el hook, pero podemos agregar lógica adicional aquí si es necesario
       console.error('Error en submit:', err)
     }
   }

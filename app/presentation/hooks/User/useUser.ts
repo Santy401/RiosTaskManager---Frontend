@@ -76,16 +76,16 @@ export const useUser = (): UseUserResult => {
     setError(null);
 
     try {
-      if (!data.role) {
-        throw new Error('El campo rol es requerido');
-      }
+       console.log('🔄 [HOOK] Iniciando creación de usuario:', data);
 
       const payload = {
         name: data.name,
         email: data.email,
         password: data.password,
-        role: data.role.toLowerCase()
+        role: (data.role || 'user').toLowerCase()
       };
+
+      console.log('📤 [HOOK] Payload enviado:', payload);
 
       const response = await fetch('/api/admin/users', {
         method: 'POST',
