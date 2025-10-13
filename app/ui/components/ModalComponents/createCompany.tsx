@@ -3,11 +3,11 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Button } from "@/app/ui/components/button"
-import { Input } from "@/app/ui/components/input"
-import { Label } from "@/app/ui/components/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/select"
-import { Switch } from "@/app/ui/components/switch"
+import { Button } from "@/app/ui/components/StyledComponents/button"
+import { Input } from "@/app/ui/components/StyledComponents/input"
+import { Label } from "@/app/ui/components/StyledComponents/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
+import { Switch } from "@/app/ui/components/StyledComponents/switch"
 
 interface CreateCompanyFormProps {
   onSubmit: (data: any) => void

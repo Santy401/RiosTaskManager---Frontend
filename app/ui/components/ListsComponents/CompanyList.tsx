@@ -1,97 +1,54 @@
 "use client"
 
-import { useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/ui/components/avatar"
-import { Button } from "@/app/ui/components/button"
-import { Input } from "@/app/ui/components/input"
-import { Badge } from "@/app/ui/components/badge"
-import { Switch } from "@/app/ui/components/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/table"
+import { useEffect, useState } from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/ui/components/StyledComponents/avatar"
+import { Button } from "@/app/ui/components/StyledComponents/button"
+import { Input } from "@/app/ui/components/StyledComponents/input"
+import { Badge } from "@/app/ui/components/StyledComponents/badge"
+import { Switch } from "@/app/ui/components/StyledComponents/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
 import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Building2 } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateCompanyForm } from "../../components/ModalComponents/createCompany"
+import { useCompany } from "@/app/presentation/hooks/Company/useCompany"
 
-// Sample company data
-const companies = [
-  {
-    id: 1,
-    name: "TechCorp Solutions",
-    nit: "900.123.456-1",
-    email: "contact@techcorp.com",
-    dian: "Activa",
-    firma: "Digital",
-    usuario: "admin@techcorp.com",
-    contraseña: "●●●●●●●●",
-    servidorCorreo: "smtp.gmail.com",
-    tipo: "A",
-    created: "28 Aug 24",
-  },
-  {
-    id: 2,
-    name: "Global Industries",
-    nit: "800.987.654-2",
-    email: "info@globalind.com",
-    dian: "Inactiva",
-    firma: "Tradicional",
-    usuario: "contact@globalind.com",
-    contraseña: "●●●●●●●●",
-    servidorCorreo: "mail.globalind.com",
-    tipo: "A",
-    created: "15 Jul 24",
-  },
-  {
-    id: 3,
-    name: "StartupHub",
-    nit: "901.555.789-3",
-    email: "hello@startuphub.io",
-    dian: "Activa",
-    firma: "Digital",
-    usuario: "team@startuphub.io",
-    contraseña: "●●●●●●●●",
-    servidorCorreo: "smtp.office365.com",
-    tipo: "B",
-    created: "03 Sep 24",
-  },
-  {
-    id: 4,
-    name: "Design Studio Pro",
-    nit: "802.444.333-4",
-    email: "team@designpro.com",
-    dian: "Activa",
-    firma: "Digital",
-    usuario: "designer@designpro.com",
-    contraseña: "●●●●●●●●",
-    servidorCorreo: "smtp.gmail.com",
-    tipo: "C",
-    created: "12 Jun 24",
-  },
-  {
-    id: 5,
-    name: "HealthTech Systems",
-    nit: "903.777.888-5",
-    email: "contact@healthtech.sys",
-    dian: "Activa",
-    firma: "Digital",
-    usuario: "admin@healthtech.sys",
-    contraseña: "●●●●●●●●",
-    servidorCorreo: "smtp.healthtech.sys",
-    tipo: "B",
-    created: "20 May 24",
-  },
-]
+interface Company {
+    id: string;
+    name: string;
+    nit: string;
+    email: string;
+    dian: string;
+    firma: string;
+    usuario: string;
+    servidorCorreo: string;
+    tipo: string;
+    contraseña: string;
+}
 
 export function CompanyList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [markCompanies, setMarkCompanies] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [companies, setCompanies] = useState<Company[]>([])
   const itemsPerPage = 10
 
-  const handleAddCompany = (data: any) => {
-    console.log("[v0] New company data:", data)
-    setIsModalOpen(false)
-    // Here you would typically send the data to your backend
+  const  { getAllCompay, isLoading, createCompany } = useCompany();
+
+  useEffect(() => {
+    loadCompanies()
+  }, [])
+
+  const loadCompanies = async () => {
+    try {
+      console.log('🔄 [COMPONENT] Cargando empresas...');
+      const companyData = await getAllCompay();
+      console.log('✅ [COMPONENT] Empresas cargadas:', companyData);
+      setCompanies(companyData)
+    } catch (error) {
+      console.error('❌ [COMPONENT] Error al cargar empresas:', error)
+    }
   }
 
   return (
@@ -182,7 +139,7 @@ export function CompanyList() {
                     {company.tipo}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{company.created}</TableCell>
+                {/* <TableCell className="text-muted-foreground">{company.created || 'na'}</TableCell> */}
               </TableRow>
             ))}
           </TableBody>
@@ -235,7 +192,7 @@ export function CompanyList() {
 
       {/* Slide-in Modal */}
       <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear nueva empresa">
-        <CreateCompanyForm onSubmit={handleAddCompany} onCancel={() => setIsModalOpen(false)} />
+        <CreateCompanyForm onSubmit={createCompany} onCancel={() => setIsModalOpen(false)} />
       </SlideModal>
     </div>
   )

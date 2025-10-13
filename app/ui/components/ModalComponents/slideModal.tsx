@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useEffect } from "react"
 import { X } from "lucide-react"
-import { Button } from "@/app/ui/components/button"
+import { Button } from "@/app/ui/components/StyledComponents/button"
 
 interface SlideModalProps {
   isOpen: boolean
