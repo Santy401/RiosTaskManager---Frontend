@@ -1,7 +1,256 @@
-export const AreaList = () => {
-    return (
-        <div>
-            <h1>Lista de Areas</h1>
+"use client"
+
+import { useEffect, useState } from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/ui/components/StyledComponents/avatar"
+import { Button } from "@/app/ui/components/StyledComponents/button"
+import { Input } from "@/app/ui/components/StyledComponents/input"
+import { Badge } from "@/app/ui/components/StyledComponents/badge"
+import { Switch } from "@/app/ui/components/StyledComponents/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
+import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, MapPin, EllipsisVertical } from "lucide-react"
+import { SlideModal } from "../../components/ModalComponents/slideModal"
+import { CreateAreaForm } from "../../components/ModalComponents/createArea"
+import { useArea } from "@/app/presentation/hooks/Area/useArea"
+import AreaActionsMenu from "./ActionsMenu/AreaActionsMenu"
+// import AreaActionsMenu from "./ActionsMenu/AreaActionsMenu"
+
+interface Area {
+  id: string;
+  name: string;
+  state: 'activo' | 'inactivo';
+  createdAt: Date;
+//   updatedAt: Date;
+}
+
+export function AreaList() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filterEstado, setFilterEstado] = useState<string>("all")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [areas, setAreas] = useState<Area[]>([])
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const itemsPerPage = 10
+
+  const { getAllAreas, isLoading, createArea } = useArea();
+
+  useEffect(() => {
+    loadAreas()
+  }, [])
+
+  const loadAreas = async () => {
+    try {
+      console.log('🔄 [COMPONENT] Cargando áreas...');
+      const areasData = await getAllAreas();
+      console.log('✅ [COMPONENT] Áreas cargadas:', areasData);
+      setAreas(areasData)
+    } catch (error) {
+      console.error('❌ [COMPONENT] Error al cargar áreas:', error)
+    }
+  }
+
+  // Filtrar áreas basado en búsqueda y filtros
+  const filteredAreas = areas.filter(area =>
+    area.name.toLowerCase().includes(searchQuery.toLowerCase())
+  ).filter(area => 
+    filterEstado === "all" || area.state === filterEstado
+  )
+
+  return (
+    <div className="w-full p-6 space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold text-foreground">Áreas</h1>
+        <p className="text-sm text-muted-foreground">{filteredAreas.length} áreas registradas</p>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <Input
+            placeholder="Buscar área"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md bg-secondary/50 border-border text-white"
+          />
+          <Select value={filterEstado} onValueChange={setFilterEstado}>
+            <SelectTrigger className="w-[180px] bg-secondary/50 border-border text-white">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="activo">Activas</SelectItem>
+              <SelectItem value="inactivo">Inactivas</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-2">
+            <Switch
+              className="data-[state=checked]:bg-emerald-500"
+            />
+            <span className="text-sm text-foreground">Mostrar solo activas</span>
+          </div>
         </div>
-    );
-};
+        <Button 
+          className="bg-primary text-primary-foreground hover:bg-primary/90" 
+          onClick={() => setIsModalOpen(true)}
+          disabled={isLoading}
+        >
+          {isLoading ? "Cargando..." : "Agregar Área"}
+        </Button>
+      </div>
+
+      {/* Table */}
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="text-muted-foreground font-medium">Icono</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Nombre del Área</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Estado</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Fecha Creación</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Acciones</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredAreas.map((area) => (
+              <TableRow key={area.id} className="border-border hover:bg-secondary/30">
+                <TableCell>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={undefined} />
+                    <AvatarFallback className="bg-blue-500/20 text-blue-400 text-xs">
+                      <MapPin className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </TableCell>
+                <TableCell className="font-medium text-foreground">
+                  <div className="flex flex-col">
+                    <span className="font-semibold">{area.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={area.state === "activo" ? "default" : "secondary"} 
+                    className={
+                      area.state === "activo" 
+                        ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" 
+                        : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                    }
+                  >
+                    {area.state === "activo" ? "Activo" : "Inactivo"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {new Date(area.createdAt).toLocaleDateString('es-ES')}
+                </TableCell>
+                <TableCell>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        const newOpenMenuId = openMenuId === area.id ? null : area.id;
+                        setOpenMenuId(newOpenMenuId);
+                      }}
+                      className="p-1 rounded hover:bg-secondary/50 transition-colors"
+                    >
+                      <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
+                    </button>
+
+                    {openMenuId === area.id && (
+                      <AreaActionsMenu
+                        areaId={area.id}
+                        isOpen={true}
+                        onClose={() => setOpenMenuId(null)}
+                        onAreaDeleted={loadAreas}
+                      />
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Select defaultValue="10">
+            <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">
+            Mostrando {Math.min(filteredAreas.length, itemsPerPage)} de {filteredAreas.length} áreas
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4 text-white" />
+          </Button>
+          {[1, 2, 3, 4, 5].map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "ghost"}
+              size="icon"
+              className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </Button>
+          ))}
+          <span className="px-2 text-muted-foreground">...</span>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
+            {Math.ceil(filteredAreas.length / itemsPerPage)}
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage >= Math.ceil(filteredAreas.length / itemsPerPage)}
+          >
+            <ChevronRight className="h-4 w-4 text-white" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Estados de carga y error */}
+      {isLoading && (
+        <div className="flex justify-center items-center p-8">
+          <div className="text-foreground">Cargando áreas...</div>
+        </div>
+      )}
+
+      {filteredAreas.length === 0 && !isLoading && (
+        <div className="flex justify-center items-center p-8">
+          <div className="text-center text-muted-foreground">
+            <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No se encontraron áreas</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Crear primera área
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Slide-in Modal */}
+      <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear nueva área">
+        <CreateAreaForm onSubmit={createArea} onCancel={() => setIsModalOpen(false)} />
+      </SlideModal>
+    </div>
+  )
+}
