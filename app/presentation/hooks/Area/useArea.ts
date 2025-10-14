@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 interface Area {
     id: string;
@@ -16,7 +16,7 @@ interface CreateAreaData {
 interface UseAreaResult {
     getAllAreas: () => Promise<Area[]>;
     createArea: (data: CreateAreaData) => Promise<Area>;
-    deleteArea:  (areaId: string) => Promise<any>;
+    deleteArea: (areaId: string) => Promise<any>;
     isLoading: boolean;
     error: string | null;
 }
@@ -25,7 +25,7 @@ export const useArea = (): UseAreaResult => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const getAllAreas = async (): Promise<Area[]> => {
+    const getAllAreas = useCallback(async (): Promise<Area[]> => {
         try {
             console.log('🔄 [HOOK] Obteniendo areas...');
 
@@ -63,7 +63,7 @@ export const useArea = (): UseAreaResult => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     const createArea = async (data: CreateAreaData): Promise<Area> => {
         setIsLoading(true);

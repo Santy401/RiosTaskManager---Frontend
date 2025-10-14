@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 interface Company {
     id: string;
@@ -37,7 +37,7 @@ export const useCompany = (): UseCompanyResult => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const getAllCompay = async (): Promise<Company[]> => {
+  const getAllCompay = useCallback(async (): Promise<Company[]> => {
         setIsLoading(true);
         setError(null);
 
@@ -78,7 +78,7 @@ export const useCompany = (): UseCompanyResult => {
         } finally {
             setIsLoading(false);
         }
-    }
+      }, [])
 
     const createCompany = async (data: CreateCompanyData): Promise<Company> => {
         setIsLoading(true);

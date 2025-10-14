@@ -1,0 +1,143 @@
+import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
+import { prisma } from '@/lib/prisma';
+import { updateTask } from "@/lib/task";
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // ✅ Verificar autenticación
+    const cookies = request.headers.get('cookie');
+    const token = cookies?.match(/token=([^;]+)/)?.[1];
+    const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];
+    const activeToken = token || authToken;
+
+    if (!activeToken) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    // ✅ Verificar token JWT
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+
+    // ✅ Verificar permisos de administrador
+    if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
+      return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
+    }
+
+    const taskId = params.id;
+
+    // ✅ Validar que el ID existe
+    if (!taskId) {
+      return NextResponse.json({ error: 'ID de Tarea requerido' }, { status: 400 });
+    }
+
+    // ✅ Verificar que la empresa existe
+    const existingTask = await prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!existingTask) {
+      return NextResponse.json({ error: 'Tarea no encontrada' }, { status: 404 });
+    }
+
+    // ✅ Eliminar la empresa
+    await prisma.task.delete({
+      where: { id: taskId },
+    });
+
+    console.log(`✅ Tarea ${taskId} eliminada por admin ${decoded.userId || decoded.id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Tarea eliminada exitosamente',
+      deletedTaskId: taskId
+    });
+
+  } catch (error) {
+    console.error('❌ Error en DELETE /api/admin/tasks/[id]:', error);
+
+    // Manejar errores específicos de JWT
+    if (error instanceof jwt.JsonWebTokenError) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
+    if (error instanceof jwt.TokenExpiredError) {
+      return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
+    }
+
+    // Manejar errores de Prisma
+    if (error instanceof Error) {
+      if (error.message.includes('Foreign key constraint')) {
+        return NextResponse.json({ 
+          error: 'No se puede eliminar la Tarea porque tiene usuarios o datos asociados' 
+        }, { status: 409 });
+      }
+      
+      if (error.message.includes('Record to delete does not exist')) {
+        return NextResponse.json({ 
+          error: 'La Tarea ya fue eliminada' 
+        }, { status: 404 });
+      }
+    }
+
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const cookies = request.headers.get('cookie');
+    const token = cookies?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+
+    if (decoded.role !== 'admin') {
+      return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
+    }
+
+    const taskId = params.id;
+    const body = await request.json();
+    
+    const { name, description, dueDate, status, companyId, areaId, userId } = body;
+
+    // Validaciones básicas
+    if (!name && !description && !dueDate && !status && !companyId && !areaId && !userId) {
+      return NextResponse.json({ error: 'Al menos un campo debe ser actualizado' }, { status: 400 });
+    }
+
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (description) updateData.description = description;
+    if (dueDate) updateData.dueDate = new Date(dueDate);
+    if (status) updateData.status = status;
+    if (companyId) updateData.companyId = companyId;
+    if (areaId) updateData.areaId = areaId;
+    if (userId) updateData.userId = userId;
+
+    const updatedTask = await updateTask(taskId, updateData);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Tarea actualizada exitosamente',
+      task: updatedTask
+    });
+
+  } catch (error) {
+    console.error('Error en PUT /api/admin/tasks/[id]:', error);
+    
+    if (error instanceof jwt.JsonWebTokenError) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+    
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
