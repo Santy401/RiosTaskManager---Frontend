@@ -12,7 +12,8 @@ import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Building2, El
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateCompanyForm } from "../../components/ModalComponents/createCompany"
 import { useCompany } from "@/app/presentation/hooks/Company/useCompany"
-import CompanyActionsMenu from "./ActionsMenu/CompanyActionsMenu"
+import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu'
+import { ContextMenu } from '@/app/ui/components/ListsComponents/ActionsMenu/ContextMenu'
 
 interface Company {
   id: string;
@@ -37,6 +38,14 @@ export function CompanyList() {
   const itemsPerPage = 10
 
   const { getAllCompay, isLoading, createCompany, deleteCompany } = useCompany();
+  const {
+    contextMenu,
+    handleDoubleClick,
+    handleDoubleTap,
+    handleContextMenu,
+    closeContextMenu,
+    contextMenuRef
+  } = useContextMenu()
 
   useEffect(() => {
     loadCompanies()
@@ -50,6 +59,29 @@ export function CompanyList() {
       setCompanies(companyData)
     } catch (error) {
       console.error('❌ [COMPONENT] Error al cargar empresas:', error)
+    }
+  }
+
+  const handleMenuAction = async (action: string, userId: string, userName: string) => {
+    try {
+      switch (action) {
+        case 'view':
+          console.log('👁️ Ver usuario:', userId)
+          break
+        case 'edit':
+          console.log('✏️ Editar usuario:', userId)
+          break
+        case 'delete':
+          if (confirm(`¿Eliminar Empresa "${userName}"?`)) {
+            await deleteCompany(userId)
+            await loadCompanies()
+          }
+          break
+      }
+    } catch (error) {
+      console.error('Error en acción:', error)
+    } finally {
+      closeContextMenu()
     }
   }
 
@@ -111,12 +143,16 @@ export function CompanyList() {
               <TableHead className="text-muted-foreground font-medium">Servidor Correo</TableHead>
               <TableHead className="text-muted-foreground font-medium">Tipo</TableHead>
               <TableHead className="text-muted-foreground font-medium">Creada</TableHead>
-              <TableHead className="text-muted-foreground font-medium"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {companies.map((company) => (
-              <TableRow key={company.id} className="border-border hover:bg-secondary/30">
+              <TableRow key={company.id} className="border-border hover:bg-secondary/30"
+                onContextMenu={(e) => handleContextMenu(e, company.id, company.name)}
+                onDoubleClick={(e) => handleDoubleClick(e, company.id, company.name)}
+                onClick={(e) => handleDoubleTap(e, company.id, company.name)}
+                onTouchStart={(e) => handleDoubleTap(e, company.id, company.name)}
+              >
                 <TableCell>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={undefined} />
@@ -142,35 +178,21 @@ export function CompanyList() {
                     {company.tipo}
                   </Badge>
                 </TableCell>
-                {/* <TableCell className="text-muted-foreground">{company.created || 'na'}</TableCell> */}
-                <TableCell>
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const newOpenMenuId = openMenuId === company.id ? null : company.id;
-                        setOpenMenuId(newOpenMenuId);
-                      }}
-                      className="p-1 rounded hover:bg-secondary/50 transition-colors"
-                    >
-                      <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
-                    </button>
-
-                    {/* Menú flotante para este usuario */}
-                    {openMenuId === company.id && (
-                      <CompanyActionsMenu
-                        companyId={company.id}
-                        isOpen={true}
-                        onClose={() => setOpenMenuId(null)}
-                        onCompanyDeleted={loadCompanies}
-                      />
-                    )}
-                  </div>
-                </TableCell>
+                <TableCell className="text-muted-foreground">{'na'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+        <ContextMenu
+          visible={contextMenu.visible}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          itemId={contextMenu.itemId}
+          itemName={contextMenu.itemName}
+          onAction={handleMenuAction}
+          onClose={closeContextMenu}
+          menuRef={contextMenuRef}
+        />
       </div>
 
       {/* Pagination */}

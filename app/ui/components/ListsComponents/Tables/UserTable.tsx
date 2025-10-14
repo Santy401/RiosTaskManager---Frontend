@@ -13,6 +13,9 @@ import { SlideModal } from "../../ModalComponents/slideModal"
 import { AddUserForm } from "../../ModalComponents/createUser"
 import { useUser } from "@/app/presentation/hooks/User/useUser"
 import UserActionsMenu from "./UserActionsMenu"
+import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu';
+import { ContextMenu } from "../ActionsMenu/ContextMenu"
+
 
 interface User {
   id: string;
@@ -34,7 +37,16 @@ export function UsersTable() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
 
-  const { getAllUsers, isLoading, error } = useUser()
+  const { getAllUsers, isLoading, deleteUser, error } = useUser()
+  const {
+    contextMenu,
+    handleDoubleClick,
+    handleDoubleTap,
+    handleContextMenu,
+    closeContextMenu,
+    contextMenuRef
+  } = useContextMenu()
+
 
   useEffect(() => {
     loadUsers()
@@ -64,6 +76,29 @@ export function UsersTable() {
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const handleMenuAction = async (action: string, userId: string, userName: string) => {
+    try {
+      switch (action) {
+        case 'view':
+          console.log('👁️ Ver usuario:', userId)
+          break
+        case 'edit':
+          console.log('✏️ Editar usuario:', userId)
+          break
+        case 'delete':
+          if (confirm(`¿Eliminar el usuario "${userName}"?`)) {
+            await deleteUser(userId)
+            await loadUsers()
+          }
+          break
+      }
+    } catch (error) {
+      console.error('Error en acción:', error)
+    } finally {
+      closeContextMenu()
+    }
+  }
 
   return (
     <div className="w-full p-6 space-y-6">
@@ -121,12 +156,16 @@ export function UsersTable() {
               <TableHead className="text-muted-foreground font-medium">Rol</TableHead>
               <TableHead className="text-muted-foreground font-medium">Creado</TableHead>
               <TableHead className="text-muted-foreground font-medium">Activo</TableHead>
-              <TableHead className="text-muted-foreground font-medium"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user) => (
-              <TableRow key={user.id} className="border-border hover:bg-secondary/30">
+              <TableRow key={user.id} className="border-border hover:bg-secondary/30"
+                onContextMenu={(e) => handleContextMenu(e, user.id, user.name)}
+                onDoubleClick={(e) => handleDoubleClick(e, user.id, user.name)}
+                onClick={(e) => handleDoubleTap(e, user.id, user.name)}
+                onTouchStart={(e) => handleDoubleTap(e, user.id, user.name)}
+              >
                 <TableCell>
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-secondary text-foreground text-xs">
@@ -157,43 +196,20 @@ export function UsersTable() {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{user.created || "N/A"}</TableCell>
                 <TableCell className="text-muted-foreground">{user.lastActive || "N/A"}</TableCell>
-                <TableCell>
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        const newOpenMenuId = openMenuId === user.id ? null : user.id;
-
-                        if (newOpenMenuId) {
-                          setMenuPosition({
-                            top: rect.bottom + window.scrollY,
-                            left: rect.left + window.scrollX,
-                          });
-                        }
-
-                        setOpenMenuId(newOpenMenuId);
-                      }}
-                      className="p-1 rounded hover:bg-secondary/50 transition-colors"
-                    >
-                      <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
-                    </button>
-
-                    {/* Menú flotante para este usuario */}
-                    {openMenuId === user.id && menuPosition && (
-                      <UserActionsMenu
-                        userId={user.id}
-                        isOpen={true}
-                        onClose={() => setOpenMenuId(null)}
-                        onUserDeleted={loadUsers} 
-                        position={menuPosition}
-                      />
-                    )}
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+        <ContextMenu
+          visible={contextMenu.visible}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          itemId={contextMenu.itemId}
+          itemName={contextMenu.itemName}
+          onAction={handleMenuAction}
+          onClose={closeContextMenu}
+          menuRef={contextMenuRef}
+        />
       </div>
 
       {error && (

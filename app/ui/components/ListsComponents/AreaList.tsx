@@ -13,14 +13,15 @@ import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateAreaForm } from "../../components/ModalComponents/createArea"
 import { useArea } from "@/app/presentation/hooks/Area/useArea"
 import AreaActionsMenu from "./ActionsMenu/AreaActionsMenu"
-// import AreaActionsMenu from "./ActionsMenu/AreaActionsMenu"
+import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu'
+import { ContextMenu } from '@/app/ui/components/ListsComponents/ActionsMenu/ContextMenu'
 
 interface Area {
   id: string;
   name: string;
   state: 'activo' | 'inactivo';
   createdAt: Date;
-//   updatedAt: Date;
+  //   updatedAt: Date;
 }
 
 export function AreaList() {
@@ -32,7 +33,15 @@ export function AreaList() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const itemsPerPage = 10
 
-  const { getAllAreas, isLoading, createArea } = useArea();
+  const { getAllAreas, isLoading, createArea, deleteArea } = useArea();
+  const {
+    contextMenu,
+    handleDoubleClick,
+    handleDoubleTap,
+    handleContextMenu,
+    closeContextMenu,
+    contextMenuRef
+  } = useContextMenu()
 
   useEffect(() => {
     loadAreas()
@@ -52,9 +61,32 @@ export function AreaList() {
   // Filtrar áreas basado en búsqueda y filtros
   const filteredAreas = areas.filter(area =>
     area.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ).filter(area => 
+  ).filter(area =>
     filterEstado === "all" || area.state === filterEstado
   )
+
+  const handleMenuAction = async (action: string, userId: string, userName: string) => {
+    try {
+      switch (action) {
+        case 'view':
+          console.log('👁️ Ver usuario:', userId)
+          break
+        case 'edit':
+          console.log('✏️ Editar usuario:', userId)
+          break
+        case 'delete':
+          if (confirm(`¿Eliminar el Area "${userName}"?`)) {
+            await deleteArea(userId)
+            await loadAreas()
+          }
+          break
+      }
+    } catch (error) {
+      console.error('Error en acción:', error)
+    } finally {
+      closeContextMenu()
+    }
+  }
 
   return (
     <div className="w-full p-6 space-y-6">
@@ -90,8 +122,8 @@ export function AreaList() {
             <span className="text-sm text-foreground">Mostrar solo activas</span>
           </div>
         </div>
-        <Button 
-          className="bg-primary text-primary-foreground hover:bg-primary/90" 
+        <Button
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={() => setIsModalOpen(true)}
           disabled={isLoading}
         >
@@ -108,12 +140,16 @@ export function AreaList() {
               <TableHead className="text-muted-foreground font-medium">Nombre del Área</TableHead>
               <TableHead className="text-muted-foreground font-medium">Estado</TableHead>
               <TableHead className="text-muted-foreground font-medium">Fecha Creación</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAreas.map((area) => (
-              <TableRow key={area.id} className="border-border hover:bg-secondary/30">
+              <TableRow key={area.id} className="border-border hover:bg-secondary/30"
+                onContextMenu={(e) => handleContextMenu(e, area.id, area.name)}
+                onDoubleClick={(e) => handleDoubleClick(e, area.id, area.name)}
+                onClick={(e) => handleDoubleTap(e, area.id, area.name)}
+                onTouchStart={(e) => handleDoubleTap(e, area.id, area.name)}
+              >
                 <TableCell>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={undefined} />
@@ -128,11 +164,11 @@ export function AreaList() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge 
-                    variant={area.state === "activo" ? "default" : "secondary"} 
+                  <Badge
+                    variant={area.state === "activo" ? "default" : "secondary"}
                     className={
-                      area.state === "activo" 
-                        ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" 
+                      area.state === "activo"
+                        ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
                         : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                     }
                   >
@@ -142,32 +178,20 @@ export function AreaList() {
                 <TableCell className="text-muted-foreground">
                   {new Date(area.createdAt).toLocaleDateString('es-ES')}
                 </TableCell>
-                <TableCell>
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        const newOpenMenuId = openMenuId === area.id ? null : area.id;
-                        setOpenMenuId(newOpenMenuId);
-                      }}
-                      className="p-1 rounded hover:bg-secondary/50 transition-colors"
-                    >
-                      <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
-                    </button>
-
-                    {openMenuId === area.id && (
-                      <AreaActionsMenu
-                        areaId={area.id}
-                        isOpen={true}
-                        onClose={() => setOpenMenuId(null)}
-                        onAreaDeleted={loadAreas}
-                      />
-                    )}
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+        <ContextMenu
+          visible={contextMenu.visible}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          itemId={contextMenu.itemId}
+          itemName={contextMenu.itemName}
+          onAction={handleMenuAction}
+          onClose={closeContextMenu}
+          menuRef={contextMenuRef}
+        />
       </div>
 
       {/* Pagination */}
@@ -212,10 +236,10 @@ export function AreaList() {
           <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
             {Math.ceil(filteredAreas.length / itemsPerPage)}
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage >= Math.ceil(filteredAreas.length / itemsPerPage)}
           >
@@ -236,8 +260,8 @@ export function AreaList() {
           <div className="text-center text-muted-foreground">
             <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No se encontraron áreas</p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="mt-4"
               onClick={() => setIsModalOpen(true)}
             >

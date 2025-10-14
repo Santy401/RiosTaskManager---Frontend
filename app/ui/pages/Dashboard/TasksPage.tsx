@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/ui/components/StyledComponents/avatar"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
@@ -8,11 +8,10 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Calendar, User, Building2, MapPin, EllipsisVertical } from "lucide-react"
+import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Calendar, User, Building2, MapPin, EllipsisVertical, Edit, Trash2, Eye } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateTaskForm } from "../../components/ModalComponents/createTask"
 import { useTask } from "@/app/presentation/hooks/Task/useTask"
-// import TaskActionsMenu from "./ActionsMenu/TaskActionsMenu"
 
 interface Task {
   id: string;
@@ -22,7 +21,7 @@ interface Task {
   status: 'pendiente' | 'en_progreso' | 'terminada';
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relaciones
   company: {
     id: string;
@@ -39,20 +38,51 @@ interface Task {
   };
 }
 
+interface ContextMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  taskId: string | null;
+  taskName: string;
+}
+
 export function TasksPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [tasks, setTasks] = useState<Task[]>([])
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    taskId: null,
+    taskName: ""
+  })
+
+  const [lastTap, setLastTap] = useState(0)
+  const tapTimer = useRef<NodeJS.Timeout | null>(null)
+
   const itemsPerPage = 10
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
   const { getAllTasks, isLoading, createTask, deleteTask } = useTask();
 
   useEffect(() => {
     loadTasks()
   }, [])
+
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        setContextMenu(prev => ({ ...prev, visible: false }))
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [contextMenu.visible])
 
   const loadTasks = async () => {
     try {
@@ -65,6 +95,134 @@ export function TasksPage() {
     }
   }
 
+  // ✅ FUNCIONES CORREGIDAS - Todas implementadas
+
+  // Manejar click derecho
+  const handleContextMenu = (event: React.MouseEvent, task: Task) => {
+    event.preventDefault()
+    openContextMenu(event, task)
+  }
+
+  // Manejar inicio de presión larga (mouse)
+  const handleMouseDown = (event: React.MouseEvent, task: Task) => {
+    if (event.button !== 0) return // Solo click izquierdo
+
+    longPressTimer.current = setTimeout(() => {
+      openContextMenu(event, task)
+    }, 2000)
+  }
+
+  // Manejar fin de presión (mouse)
+  const handleMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+    // El menú se mantiene visible hasta hacer click fuera
+  }
+
+  // Manejar inicio de presión (touch)
+  const handleTouchStart = (event: React.TouchEvent, task: Task) => {
+    longPressTimer.current = setTimeout(() => {
+      // Crear evento sintético para touch
+      const touch = event.touches[0]
+      const syntheticEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => { }
+      } as React.MouseEvent
+      openContextMenu(syntheticEvent, task)
+    }, 2000)
+  }
+
+  // Manejar fin de presión (touch)
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+    // El menú se mantiene visible hasta hacer click fuera
+  }
+
+  // Abrir menú contextual - VERSIÓN SEGURA
+  const openContextMenu = (event: React.MouseEvent, task: Task) => {
+    try {
+      setContextMenu({
+        visible: true,
+        x: event.clientX,
+        y: event.clientY,
+        taskId: task.id,
+        taskName: task.name
+      })
+    } catch (error) {
+      console.error('Error abriendo menú contextual:', error)
+      // Fallback seguro
+      setContextMenu({
+        visible: true,
+        x: 100,
+        y: 100,
+        taskId: task.id,
+        taskName: task.name
+      })
+    }
+  }
+
+  // Acciones del menú contextual
+  const handleMenuAction = async (action: string) => {
+    if (!contextMenu.taskId) return
+
+    try {
+      switch (action) {
+        case 'view':
+          console.log('👁️ Ver tarea:', contextMenu.taskId)
+          alert(`Ver detalles de: ${contextMenu.taskName}`)
+          break
+
+        case 'edit':
+          console.log('✏️ Editar tarea:', contextMenu.taskId)
+          alert(`Editar: ${contextMenu.taskName}`)
+          break
+
+        case 'delete':
+          if (confirm(`¿Estás seguro de que quieres eliminar la tarea "${contextMenu.taskName}"?`)) {
+            await deleteTask(contextMenu.taskId)
+            await loadTasks()
+          }
+          break
+      }
+    } catch (error) {
+      console.error('Error en acción del menú:', error)
+    } finally {
+      setContextMenu(prev => ({ ...prev, visible: false }))
+    }
+  }
+
+  const handleDoubleTap = (event: React.MouseEvent | React.TouchEvent, task: Task) => {
+    const currentTime = new Date().getTime()
+    const tapLength = currentTime - lastTap
+
+    if (tapLength < 300 && tapLength > 0) {
+      // Es un doble tap
+      if ('touches' in event) {
+        const touch = event.touches[0]
+        const syntheticEvent = {
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          preventDefault: () => { }
+        } as React.MouseEvent
+        openContextMenu(syntheticEvent, task)
+      } else {
+        openContextMenu(event as React.MouseEvent, task)
+      }
+    }
+
+    setLastTap(currentTime)
+  }
+
+  const handleDoubleClick = (event: React.MouseEvent, task: Task) => {
+    openContextMenu(event, task)
+  }
+
   // Filtrar tareas basado en búsqueda y filtros
   const filteredTasks = tasks.filter(task =>
     task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -72,7 +230,7 @@ export function TasksPage() {
     task.company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.area.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.user.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  ).filter(task => 
+  ).filter(task =>
     filterStatus === "all" || task.status === filterStatus
   )
 
@@ -109,7 +267,9 @@ export function TasksPage() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold text-foreground">Tareas</h1>
-        <p className="text-sm text-muted-foreground">{filteredTasks.length} tareas registradas</p>
+        <p className="text-sm text-muted-foreground">
+          {filteredTasks.length} tareas registradas
+        </p>
       </div>
 
       {/* Controls */}
@@ -137,8 +297,8 @@ export function TasksPage() {
             <span className="text-sm text-foreground">Mostrar solo activas</span>
           </div>
         </div>
-        <Button 
-          className="bg-primary text-primary-foreground hover:bg-primary/90" 
+        <Button
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={() => setIsModalOpen(true)}
           disabled={isLoading}
         >
@@ -159,12 +319,19 @@ export function TasksPage() {
               <TableHead className="text-muted-foreground font-medium">Estado</TableHead>
               <TableHead className="text-muted-foreground font-medium">Fecha Vencimiento</TableHead>
               <TableHead className="text-muted-foreground font-medium">Creada</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTasks.map((task) => (
-              <TableRow key={task.id} className="border-border hover:bg-secondary/30">
+              <TableRow
+                key={task.id}
+                className="border-border hover:bg-secondary/30 transition-colors duration-200"
+                onContextMenu={(e) => handleContextMenu(e, task)}
+                onDoubleClick={(e) => handleDoubleClick(e, task)} // ✅ Doble click
+                onClick={(e) => handleDoubleTap(e, task)} // ✅ Doble tap
+                onTouchStart={(e) => handleDoubleTap(e, task)} // ✅ Doble tap en móvil
+                style={{ cursor: 'context-menu' }}
+              >
                 <TableCell className="font-medium text-foreground">
                   <div className="flex flex-col">
                     <span className="font-semibold">{task.name}</span>
@@ -190,7 +357,7 @@ export function TasksPage() {
                         <MapPin className="h-3 w-3" />
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm  text-[#7a7a7a]">{task.area.name}</span>
+                    <span className="text-sm text-[#7a7a7a]">{task.area.name}</span>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -201,15 +368,15 @@ export function TasksPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="text-sm  text-[#7a7a7a]">{task.user.name || 'Sin asignar'}</span>
+                      <span className="text-sm text-[#7a7a7a]">{task.user.name || 'Sin asignar'}</span>
                       <span className="text-xs text-muted-foreground">{task.user.email}</span>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <Badge {...getStatusBadgeVariant(task.status)}>
-                    {task.status === 'terminada' ? 'Terminada' : 
-                     task.status === 'en_progreso' ? 'En Progreso' : 'Pendiente'}
+                    {task.status === 'terminada' ? 'Terminada' :
+                      task.status === 'en_progreso' ? 'En Progreso' : 'Pendiente'}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -228,33 +395,54 @@ export function TasksPage() {
                 <TableCell className="text-muted-foreground">
                   {formatDate(task.createdAt)}
                 </TableCell>
-                {/* <TableCell>
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        const newOpenMenuId = openMenuId === task.id ? null : task.id;
-                        setOpenMenuId(newOpenMenuId);
-                      }}
-                      className="p-1 rounded hover:bg-secondary/50 transition-colors"
-                    >
-                      <EllipsisVertical className="h-4 w-4 text-muted-foreground" />
-                    </button>
-
-                    {openMenuId === task.id && (
-                      <TaskActionsMenu
-                        taskId={task.id}
-                        isOpen={true}
-                        onClose={() => setOpenMenuId(null)}
-                        onTaskDeleted={loadTasks}
-                      />
-                    )}
-                  </div>
-                </TableCell> */}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {/* Menú Contextual */}
+      {contextMenu.visible && (
+        <div
+          className="fixed z-50 w-56 rounded-lg border border-border bg-card shadow-lg py-2 animate-in fade-in-0 zoom-in-95"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-3 py-1.5 border-b border-border">
+            <p className="text-sm font-medium text-foreground truncate">
+              {contextMenu.taskName}
+            </p>
+            <p className="text-xs text-muted-foreground">ID: {contextMenu.taskId?.slice(0, 8)}...</p>
+          </div>
+
+          <button
+            onClick={() => handleMenuAction('view')}
+            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+          >
+            <Eye className="h-4 w-4 text-blue-400" />
+            <span>Ver detalles</span>
+          </button>
+
+          <button
+            onClick={() => handleMenuAction('edit')}
+            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+          >
+            <Edit className="h-4 w-4 text-green-400" />
+            <span>Editar tarea</span>
+          </button>
+
+          <button
+            onClick={() => handleMenuAction('delete')}
+            className="flex w-full items-center gap-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>Eliminar tarea</span>
+          </button>
+        </div>
+      )}
 
       {/* Estados de carga y error */}
       {isLoading && (
@@ -268,8 +456,8 @@ export function TasksPage() {
           <div className="text-center text-muted-foreground">
             <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No se encontraron tareas</p>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="mt-4"
               onClick={() => setIsModalOpen(true)}
             >
@@ -321,10 +509,10 @@ export function TasksPage() {
           <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
             {Math.ceil(filteredTasks.length / itemsPerPage)}
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage >= Math.ceil(filteredTasks.length / itemsPerPage)}
           >
