@@ -3,8 +3,6 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs'
 import { getRealUsers, createUsers } from '@/lib/users';
 
-
-
 export async function GET(request: Request) {
 
   try {
@@ -110,9 +108,5 @@ export async function DELETE(request: Request) {
 }
 
 async function checkIfUserExists(email: string) {
-  // Tu lógica para verificar en la base de datos
-  // Ejemplo con MongoDB:
-  // return await db.collection('users').findOne({ email });
-  // Ejemplo con PostgreSQL:
-  // return await db.user.findUnique({ where: { email } });
+  // lógica para verificar en la base de datos
 }

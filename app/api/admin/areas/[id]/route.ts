@@ -7,7 +7,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // ✅ Verificar autenticación
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
     const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];
@@ -17,22 +16,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // ✅ Verificar token JWT
     const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
 
-    // ✅ Verificar permisos de administrador
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
     }
 
     const areaId = params.id;
 
-    // ✅ Validar que el ID existe
     if (!areaId) {
       return NextResponse.json({ error: 'ID de area requerido' }, { status: 400 });
     }
 
-    // ✅ Verificar que la empresa existe
     const existingArea = await prisma.area.findUnique({
       where: { id: areaId },
     });
@@ -41,7 +36,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'area no encontrada' }, { status: 404 });
     }
 
-    // ✅ Eliminar la empresa
     await prisma.area.delete({
       where: { id: areaId },
     });
@@ -57,7 +51,6 @@ export async function DELETE(
   } catch (error) {
     console.error('❌ Error en DELETE /api/admin/area/[id]:', error);
 
-    // Manejar errores específicos de JWT
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
@@ -66,17 +59,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
 
-    // Manejar errores de Prisma
     if (error instanceof Error) {
       if (error.message.includes('Foreign key constraint')) {
-        return NextResponse.json({ 
-          error: 'No se puede eliminar la area porque tiene datos asociados' 
+        return NextResponse.json({
+          error: 'No se puede eliminar la area porque tiene datos asociados'
         }, { status: 409 });
       }
-      
+
       if (error.message.includes('Record to delete does not exist')) {
-        return NextResponse.json({ 
-          error: 'La area ya fue eliminada' 
+        return NextResponse.json({
+          error: 'La area ya fue eliminada'
         }, { status: 404 });
       }
     }

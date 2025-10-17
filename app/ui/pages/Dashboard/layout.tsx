@@ -1,13 +1,5 @@
 'use client';
-
-import { SlideBar } from "../../components/slideBar"
-import { useState } from "react"
-import HomePage from "./HomePage"
-import DashboardPage from "./DashboardPage"
-import TasksPage from "./TasksPage"
-import ListsPage from "./ListsPage"
-import SettingsPage from "./SettingsPage"
-
+import homepage from '@/app/ui/pages/Dashboard/Admin/page'
 export default function RootLayout({
     children,
 }: Readonly<{

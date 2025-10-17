@@ -8,7 +8,7 @@ import { TasksPage } from "../TasksPage"
 import ListsPage from "../ListsPage"
 import SettingsPage from "../SettingsPage"
 
-export default function () {
+export default function Homepage() {
     const [isSelected, setIsSelected] = useState('home')
 
     const renderContent = () => {

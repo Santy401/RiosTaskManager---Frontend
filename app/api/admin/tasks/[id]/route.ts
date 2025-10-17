@@ -8,7 +8,6 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // ✅ Verificar autenticación
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
     const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];
@@ -18,22 +17,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // ✅ Verificar token JWT
     const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
 
-    // ✅ Verificar permisos de administrador
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
     }
 
     const taskId = params.id;
 
-    // ✅ Validar que el ID existe
     if (!taskId) {
       return NextResponse.json({ error: 'ID de Tarea requerido' }, { status: 400 });
     }
 
-    // ✅ Verificar que la empresa existe
     const existingTask = await prisma.task.findUnique({
       where: { id: taskId },
     });
@@ -42,7 +37,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Tarea no encontrada' }, { status: 404 });
     }
 
-    // ✅ Eliminar la empresa
     await prisma.task.delete({
       where: { id: taskId },
     });
@@ -58,7 +52,6 @@ export async function DELETE(
   } catch (error) {
     console.error('❌ Error en DELETE /api/admin/tasks/[id]:', error);
 
-    // Manejar errores específicos de JWT
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
@@ -67,17 +60,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
     }
 
-    // Manejar errores de Prisma
     if (error instanceof Error) {
       if (error.message.includes('Foreign key constraint')) {
-        return NextResponse.json({ 
-          error: 'No se puede eliminar la Tarea porque tiene usuarios o datos asociados' 
+        return NextResponse.json({
+          error: 'No se puede eliminar la Tarea porque tiene usuarios o datos asociados'
         }, { status: 409 });
       }
-      
+
       if (error.message.includes('Record to delete does not exist')) {
-        return NextResponse.json({ 
-          error: 'La Tarea ya fue eliminada' 
+        return NextResponse.json({
+          error: 'La Tarea ya fue eliminada'
         }, { status: 404 });
       }
     }
@@ -93,7 +85,7 @@ export async function PUT(
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
-    
+
     if (!token) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
@@ -106,10 +98,9 @@ export async function PUT(
 
     const taskId = params.id;
     const body = await request.json();
-    
+
     const { name, description, dueDate, status, companyId, areaId, userId } = body;
 
-    // Validaciones básicas
     if (!name && !description && !dueDate && !status && !companyId && !areaId && !userId) {
       return NextResponse.json({ error: 'Al menos un campo debe ser actualizado' }, { status: 400 });
     }
@@ -133,11 +124,11 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error en PUT /api/admin/tasks/[id]:', error);
-    
+
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
-    
+
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

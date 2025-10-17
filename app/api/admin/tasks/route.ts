@@ -19,7 +19,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
         }
 
-        const tasks = await getAllTasks(); // ✅ Cambié 'users' por 'companies'
+        const tasks = await getAllTasks();
 
         return NextResponse.json(tasks);
 
@@ -58,18 +58,15 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { name, description, companyId, areaId, userId, dueDate, status } = body;
 
-        // ✅ Validaciones básicas
         if (!name || !areaId || !description || !companyId || !userId || !dueDate || !status) {
             return NextResponse.json({ error: 'Los campos son requeridos' }, { status: 400 });
         }
 
-        // ✅ Verificar si ya existe una empresa con el mismo NIT o email
         // const existingCompany = await checkIfCompanyExists(nit, email);
         // if (existingCompany) {
         //   return NextResponse.json({ error: 'Ya existe una empresa con este NIT o email' }, { status: 409 });
         // }
 
-        // ✅ Crear la empresa en la base de datos
         const newTask = await createTask({
             name,
             description,
@@ -77,9 +74,7 @@ export async function POST(request: Request) {
             areaId,
             userId,
             dueDate,
-            status,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            status
         });
 
         console.log('✅ Tarea creada exitosamente:', newTask.id);
@@ -101,7 +96,6 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
         }
 
-        // Manejar errores de base de datos
         if (error instanceof Error && error.message.includes('unique constraint')) {
             return NextResponse.json({ error: 'Ya existe una tarea con algunos campos' }, { status: 409 });
         }

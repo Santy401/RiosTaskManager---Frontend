@@ -37,7 +37,7 @@ export function CompanyList() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const itemsPerPage = 10
 
-  const { getAllCompay, isLoading, createCompany, deleteCompany } = useCompany();
+  const { getAllCompany, isLoading, createCompany, deleteCompany } = useCompany();
   const {
     contextMenu,
     handleDoubleClick,
@@ -54,7 +54,7 @@ export function CompanyList() {
   const loadCompanies = async () => {
     try {
       console.log('🔄 [COMPONENT] Cargando empresas...');
-      const companyData = await getAllCompay();
+      const companyData = await getAllCompany();
       console.log('✅ [COMPONENT] Empresas cargadas:', companyData);
       setCompanies(companyData)
     } catch (error) {
