@@ -1,21 +1,20 @@
 import { useArea } from "@/app/presentation/hooks/Area/useArea";
 
-// ✅ Interface para las props
 interface CompanyActionsMenuProps {
   areaId: string;
   isOpen: boolean;
   onClose: () => void;
-  onAreaDeleted: () => void; // ✅ Renombrar para evitar conflicto
+  onAreaDeleted: () => void;
 }
 
 export default function AreaActionsMenu({ 
   areaId, 
   isOpen, 
   onClose,
-  onAreaDeleted // ✅ Nombre diferente
+  onAreaDeleted
 }: CompanyActionsMenuProps) {
 
-  const { deleteArea, isLoading } = useArea(); // ✅ isLoading agregada
+  const { deleteArea, isLoading } = useArea();
   
   if (!isOpen) return null;
 
@@ -25,19 +24,16 @@ export default function AreaActionsMenu({
     try {
       switch (action) {
         case 'edit':
-          // Lógica para editar empresa
           break;
         case 'ban':
-          // Lógica para banear empresa
           break;
         case 'delete':
           if (confirm('¿Estás seguro de que quieres eliminar esta empresa? Esta acción no se puede deshacer.')) {
-            await deleteArea(areaId); // ✅ deleteCompany, no deleteUser
-            onAreaDeleted(); // ✅ Nombre actualizado
+            await deleteArea(areaId);
+            onAreaDeleted();
           }
           break;
         case 'view':
-          // Lógica para ver detalles
           break;
       }
     } catch (error) {
@@ -49,13 +45,11 @@ export default function AreaActionsMenu({
 
   return (
     <>
-      {/* Fondo semitransparente para cerrar al hacer clic fuera */}
       <div 
         className="fixed inset-0 z-40" 
         onClick={onClose}
       />
-      
-      {/* Menú flotante */}
+
       <div 
         className="absolute z-50 w-48 rounded-md border border-border bg-card shadow-lg py-1"
         style={{right: '38%', top: '10%'}}
@@ -63,7 +57,7 @@ export default function AreaActionsMenu({
         <button
           onClick={() => handleAction('view')}
           className="flex w-full items-center px-3 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
-          disabled={isLoading} // ✅ Deshabilitar durante loading
+          disabled={isLoading}
         >
           👁️ Ver detalles
         </button>
@@ -76,10 +70,10 @@ export default function AreaActionsMenu({
         </button>
         <button
           onClick={() => handleAction('delete')}
-          disabled={isLoading} // ✅ Deshabilitar durante eliminación
+          disabled={isLoading}
           className="flex w-full items-center px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? '⏳ Eliminando...' : '🗑️ Eliminar Area'} {/* ✅ isLoading funciona */}
+          {isLoading ? '⏳ Eliminando...' : '🗑️ Eliminar Area'}
         </button>
       </div>
     </>
