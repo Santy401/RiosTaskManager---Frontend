@@ -16,7 +16,6 @@ import UserActionsMenu from "./UserActionsMenu"
 import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu';
 import { ContextMenu } from "../ActionsMenu/ContextMenu"
 
-
 interface User {
   id: string;
   name: string;
@@ -40,13 +39,10 @@ export function UsersTable() {
   const { getAllUsers, isLoading, deleteUser, error } = useUser()
   const {
     contextMenu,
-    handleDoubleClick,
-    handleDoubleTap,
     handleContextMenu,
     closeContextMenu,
     contextMenuRef
   } = useContextMenu()
-
 
   useEffect(() => {
     loadUsers()
@@ -98,6 +94,12 @@ export function UsersTable() {
     } finally {
       closeContextMenu()
     }
+  }
+
+  // Manejar el context menu específico para la tabla
+  const handleTableContextMenu = (e: React.MouseEvent, userId: string, userName: string) => {
+    e.preventDefault() // Esto es crucial para que aparezca el context menu
+    handleContextMenu(e, userId, userName)
   }
 
   return (
@@ -160,11 +162,10 @@ export function UsersTable() {
           </TableHeader>
           <TableBody>
             {filteredUsers.map((user) => (
-              <TableRow key={user.id} className="border-border hover:bg-secondary/30"
-                onContextMenu={(e) => handleContextMenu(e, user.id, user.name)}
-                onDoubleClick={(e) => handleDoubleClick(e, user.id, user.name)}
-                onClick={(e) => handleDoubleTap(e, user.id, user.name)}
-                onTouchStart={(e) => handleDoubleTap(e, user.id, user.name)}
+              <TableRow
+                key={user.id}
+                className="border-border hover:bg-secondary/30 cursor-context-menu"
+                onContextMenu={(e) => handleTableContextMenu(e, user.id, user.name)}
               >
                 <TableCell>
                   <Avatar className="h-8 w-8">
@@ -200,16 +201,20 @@ export function UsersTable() {
             ))}
           </TableBody>
         </Table>
-        <ContextMenu
-          visible={contextMenu.visible}
-          x={contextMenu.x}
-          y={contextMenu.y}
-          itemId={contextMenu.itemId}
-          itemName={contextMenu.itemName}
-          onAction={handleMenuAction}
-          onClose={closeContextMenu}
-          menuRef={contextMenuRef}
-        />
+
+        {/* Context Menu */}
+        {contextMenu.visible && (
+          <ContextMenu
+            visible={contextMenu.visible}
+            x={contextMenu.x}
+            y={contextMenu.y}
+            itemId={contextMenu.itemId}
+            itemName={contextMenu.itemName}
+            onAction={handleMenuAction}
+            onClose={closeContextMenu}
+            menuRef={contextMenuRef}
+          />
+        )}
       </div>
 
       {error && (

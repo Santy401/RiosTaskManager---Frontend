@@ -1,51 +1,55 @@
 import { useContextMenuBase } from "./useContextMenuBase";
 
-export const useContextMenuHandlers = () => {
-    const { setContextMenu, lastTap, setLastTap } = useContextMenuBase();
+export const useContextMenuHandlers = (base: ReturnType<typeof useContextMenuBase>) => {
+    const { setContextMenu, lastTap, setLastTap } = base;
 
     const openContextMenu = (event: React.MouseEvent, itemId: string, itemName: string) => {
         try {
+            console.log('🟢 [CONTEXT MENU] Abriendo menú en:', { x: event.clientX, y: event.clientY, itemId, itemName });
             setContextMenu({
                 visible: true,
                 x: event.clientX,
                 y: event.clientY,
                 itemId,
                 itemName
-            })
+            });
         } catch (error) {
-            console.error('Error abriendo menú contextual:', error)
+            console.error('❌ [CONTEXT MENU] Error abriendo menú contextual:', error);
         }
-    }
+    };
 
     const handleDoubleTap = (event: React.MouseEvent | React.TouchEvent, itemId: string, itemName: string) => {
-        const currentTime = new Date().getTime()
-        const tapLength = currentTime - lastTap
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
 
         if (tapLength < 300 && tapLength > 0) {
+            console.log('👆 [CONTEXT MENU] Double tap detectado');
             if ('touches' in event) {
-                const touch = event.touches[0]
+                const touch = event.touches[0];
                 const syntheticEvent = {
                     clientX: touch.clientX,
                     clientY: touch.clientY,
                     preventDefault: () => { }
-                } as React.MouseEvent
-                openContextMenu(syntheticEvent, itemId, itemName)
+                } as React.MouseEvent;
+                openContextMenu(syntheticEvent, itemId, itemName);
             } else {
-                openContextMenu(event as React.MouseEvent, itemId, itemName)
+                openContextMenu(event as React.MouseEvent, itemId, itemName);
             }
         }
 
-        setLastTap(currentTime)
-    }
+        setLastTap(currentTime);
+    };
 
     const handleDoubleClick = (event: React.MouseEvent, itemId: string, itemName: string) => {
-        openContextMenu(event, itemId, itemName)
-    }
+        console.log('🖱️ [CONTEXT MENU] Double click detectado');
+        openContextMenu(event, itemId, itemName);
+    };
 
     const handleContextMenu = (event: React.MouseEvent, itemId: string, itemName: string) => {
-        event.preventDefault()
-        openContextMenu(event, itemId, itemName)
-    }
+        console.log('📋 [CONTEXT MENU] Context menu solicitado');
+        event.preventDefault();
+        openContextMenu(event, itemId, itemName);
+    };
 
-    return { openContextMenu, handleDoubleClick, handleDoubleTap, handleContextMenu }
-}
+    return { openContextMenu, handleDoubleClick, handleDoubleTap, handleContextMenu };
+};
