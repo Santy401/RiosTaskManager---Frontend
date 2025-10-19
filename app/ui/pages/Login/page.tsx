@@ -61,7 +61,7 @@ export default function Login() {
     return (
         <div className={styles.container}>
             <form className={styles.form} onSubmit={handleSubmit}>
-                <h2 className='text-black text-[19px]'>Inicia Sesión</h2>
+                <h2 className='text-white text-[19px]'>Inicia Sesión</h2>
                 <div className={styles.inputs}>
                     <input
                         className={styles.input}
@@ -88,7 +88,7 @@ export default function Login() {
                         type="submit"
                         disabled={isLoading}
                     >
-                        {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
+                        {isLoading ? '...' : 'Iniciar Sesión'}
                     </button>
                     {error && (
                         <div className="text-red-500 text-sm mt-2">
