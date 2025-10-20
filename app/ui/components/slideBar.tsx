@@ -14,7 +14,9 @@ import {
   Briefcase,
   SquareCheckBig,
   ListIcon,
+  LogOut,
 } from "lucide-react"
+import Image from "next/image"
 
 interface SidebarProps {
   isSelected: string
@@ -24,7 +26,7 @@ interface SidebarProps {
 export const SlideBar = ({ isSelected, setIsSelected }: SidebarProps) => {
   const [isListasExpanded, setIsListasExpanded] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [ isLoading ,setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleListasClick = () => {
     if (isCollapsed) {
@@ -48,46 +50,60 @@ export const SlideBar = ({ isSelected, setIsSelected }: SidebarProps) => {
     { id: "listas-areas", label: "Áreas", icon: Briefcase },
   ]
 
-const handleLogout = async (e: React.FormEvent) => {
+  const handleLogout = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-        console.log('Attempting logout...');
+      console.log('Attempting logout...');
 
-        await fetch('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-        });
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
 
-        // Redirigir inmediatamente sin esperar respuesta
-        window.location.href = '/ui/pages/Login';
+      // Redirigir inmediatamente sin esperar respuesta
+      window.location.href = '/ui/pages/Login';
 
     } catch (err) {
-        console.error('Logout error:', err);
-        // Redirigir incluso si hay error
-        window.location.href = '/ui/pages/Login';
+      console.error('Logout error:', err);
+      // Redirigir incluso si hay error
+      window.location.href = '/ui/pages/Login';
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
 
   return (
     <nav
-      className={`${
-        isCollapsed ? "w-16" : "w-64"
-      } h-screen border-r border-border bg-[#0F0F0F] transition-all duration-300 ease-in-out flex flex-col`}
+      className={`${isCollapsed ? "w-16" : "w-64"
+        } h-screen border-r border-border bg-[#0F0F0F] transition-all duration-300 ease-in-out flex flex-col`}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
-        {!isCollapsed && <span className="font-semibold text-foreground">TaskManager</span>}
+        {!isCollapsed && (
+          <span className="font-semibold text-foreground flex items-center gap-2">
+            <Image
+              src='/favicon.ico'
+              alt="Logo RiosBackend"
+              width={30}
+              height={30}
+            />
+            RiosBackend
+          </span>
+        )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 hover:bg-accent rounded-md transition-colors ml-auto"
+          className="p-1.5 hover:rounded-md transition-colors ml-auto cursor-pointer"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <Image
+              src='/favicon.ico'
+              alt="Logo RiosBackend"
+              width={30}
+              height={30}
+            />
           ) : (
             <ChevronLeft className="w-4 h-4 text-muted-foreground" />
           )}
@@ -95,7 +111,7 @@ const handleLogout = async (e: React.FormEvent) => {
       </div>
 
       {/* Navigation Items */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-hidden p-3 items-center justify-center">
         <ul className="flex flex-col gap-1">
           {menuItems.map((item) => {
             const Icon = item.icon
@@ -105,11 +121,10 @@ const handleLogout = async (e: React.FormEvent) => {
               <div key={item.id}>
                 <li
                   onClick={() => (item.hasSubmenu ? handleListasClick() : setIsSelected(item.id))}
-                  className={`${
-                    isActive
-                      ? "text-foreground bg-accent border border-border"
-                      : "text-muted-foreground hover:text-foreground"
-                  } cursor-pointer hover:bg-accent/50 px-3 py-2 rounded-md flex items-center gap-3 transition-all group relative`}
+                  className={`${isActive
+                    ? "text-foreground bg-accent border border-border"
+                    : "text-muted-foreground hover:text-foreground"
+                    } cursor-pointer hover:bg-accent/50 px-3 py-2 rounded-md flex justify-center items-center gap-3 transition-all group relative`}
                   title={isCollapsed ? item.label : undefined}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
@@ -123,13 +138,6 @@ const handleLogout = async (e: React.FormEvent) => {
                       )}
                     </>
                   )}
-
-                  {/* Tooltip for collapsed state */}
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 border border-border">
-                      {item.label}
-                    </div>
-                  )}
                 </li>
 
                 {/* Submenu Items */}
@@ -141,11 +149,10 @@ const handleLogout = async (e: React.FormEvent) => {
                         <li
                           key={subItem.id}
                           onClick={() => setIsSelected(subItem.id)}
-                          className={`${
-                            isSelected === subItem.id
-                              ? "text-foreground bg-accent border border-border"
-                              : "text-muted-foreground hover:text-foreground"
-                          } cursor-pointer hover:bg-accent/50 px-3 py-2 rounded-md flex items-center gap-2 text-sm transition-all`}
+                          className={`${isSelected === subItem.id
+                            ? "text-foreground bg-accent border border-border"
+                            : "text-muted-foreground hover:text-foreground"
+                            } cursor-pointer hover:bg-accent/50 px-3 py-2 rounded-md flex items-center gap-2 text-sm transition-all`}
                         >
                           <SubIcon className="w-4 h-4" />
                           <span>{subItem.label}</span>
@@ -161,11 +168,18 @@ const handleLogout = async (e: React.FormEvent) => {
       </div>
 
       {/* Footer Section */}
-      {!isCollapsed && (
-        <div className="p-3 border-t border-border">
-          <button className="text-xs text-muted-foreground px-3 py-2" onClick={handleLogout}>Cerrar sesión</button>
-        </div>
-      )}
+      <div className="p-3 border-t border-border">
+        <button
+          className={`
+        flex items-center gap-2 text-xs text-muted-foreground px-3 py-2 cursor-pointer hover:text-red-800 w-full
+        ${isCollapsed ? 'justify-center' : 'justify-start'}
+      `}
+          onClick={handleLogout}
+        >
+          <LogOut className="w-4 h-4" />
+          {!isCollapsed && "Cerrar sesión"}
+        </button>
+      </div>
     </nav>
   )
 }
