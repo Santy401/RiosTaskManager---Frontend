@@ -265,6 +265,24 @@ export function TasksPage() {
     return new Date(dueDate) < new Date()
   }
 
+  const handleCreateTask = async (taskData: any) => {
+    try {
+      // Crear la tarea usando el hook
+      await createTask(taskData)
+      // El hook debería manejar la actualización del estado
+    } catch (error) {
+      console.error('Error creando tarea:', error)
+      throw error // Esto será capturado por el formulario
+    }
+  }
+
+  const handleCreateSuccess = () => {
+    // Cerrar el modal después del éxito
+    setIsModalOpen(false)
+    // Recargar las tareas si es necesario
+    loadTasks()
+  }
+
   return (
     <div className="w-full p-6 space-y-6">
       {/* Header */}
@@ -529,8 +547,16 @@ export function TasksPage() {
       )}
 
       {/* Slide-in Modal */}
-      <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear nueva tarea">
-        <CreateTaskForm onSubmit={createTask} onCancel={() => setIsModalOpen(false)} />
+      <SlideModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Crear nueva tarea"
+      >
+        <CreateTaskForm
+          onSubmit={handleCreateTask}
+          onCancel={() => setIsModalOpen(false)}
+          onSuccess={handleCreateSuccess}
+        />
       </SlideModal>
     </div>
   )

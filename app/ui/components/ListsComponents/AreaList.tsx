@@ -91,6 +91,25 @@ export function AreaList() {
     }
   }
 
+  const handleCreateArea = async (areaData: any) => {
+    try {
+      // Crear el área usando el hook
+      await createArea(areaData)
+      // No necesitas llamar loadAreas aquí si tu hook actualiza el cache automáticamente
+      // Si no, puedes llamar loadAreas() para refrescar la lista
+    } catch (error) {
+      console.error('Error creando área:', error)
+      throw error // Esto será capturado por el formulario
+    }
+  }
+
+  const handleCreateSuccess = () => {
+    // Cerrar el modal después del éxito
+    setIsModalOpen(false)
+    // Recargar las áreas si es necesario
+    loadAreas()
+  }
+
   return (
     <div className="w-full p-6 space-y-6">
       {/* Header */}
@@ -279,8 +298,12 @@ export function AreaList() {
       )}
 
       {/* Slide-in Modal */}
-      <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear nueva área">
-        <CreateAreaForm onSubmit={createArea} onCancel={() => setIsModalOpen(false)} />
+      <SlideModal isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Crear nueva área">
+        <CreateAreaForm onSubmit={handleCreateArea}
+          onCancel={() => setIsModalOpen(false)}
+          onSuccess={handleCreateSuccess} />
       </SlideModal>
     </div>
   )

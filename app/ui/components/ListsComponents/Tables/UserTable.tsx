@@ -59,15 +59,6 @@ export function UsersTable() {
     }
   };
 
-  const handleAddUser = async (data: any) => {
-    try {
-      await loadUsers()
-      setIsModalOpen(false)
-    } catch (err) {
-      console.error('Error creando usuario:', err)
-    }
-  }
-
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
@@ -128,6 +119,22 @@ export function UsersTable() {
 
     return colors[index];
   };
+
+  const handleAddUser = async (userData: any) => {
+    try {
+      // Esta función se ejecutará cuando el formulario tenga éxito
+      await loadUsers() // Recargar la lista de usuarios
+    } catch (error) {
+      console.error('Error actualizando lista de usuarios:', error)
+    }
+  }
+
+  const handleCreateSuccess = () => {
+    // Cerrar el modal después del éxito
+    setIsModalOpen(false)
+    // Recargar los usuarios
+    loadUsers()
+  }
 
   return (
     <div className="w-full p-6 space-y-6">
@@ -312,8 +319,16 @@ export function UsersTable() {
         </div>
       )}
 
-      <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crea un nuevo usuario">
-        <AddUserForm onSubmit={handleAddUser} onCancel={() => setIsModalOpen(false)} />
+      <SlideModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Crear nuevo usuario"
+      >
+        <AddUserForm
+          onSubmit={handleAddUser}
+          onCancel={() => setIsModalOpen(false)}
+          onSuccess={handleCreateSuccess}
+        />
       </SlideModal>
     </div>
   )

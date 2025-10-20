@@ -87,6 +87,25 @@ export function CompanyList() {
     }
   }
 
+  const handleCreateCompany = async (companyData: any) => {
+    try {
+      // Crear la empresa usando el hook
+      await createCompany(companyData)
+      // El hook debería manejar la actualización del estado
+      // Si no, puedes llamar loadCompanies() aquí
+    } catch (error) {
+      console.error('Error creando empresa:', error)
+      throw error // Esto será capturado por el formulario
+    }
+  }
+
+  const handleCreateSuccess = () => {
+    // Cerrar el modal después del éxito
+    setIsModalOpen(false)
+    // Recargar las empresas si es necesario
+    loadCompanies()
+  }
+
   return (
     <div className="w-full p-6 space-y-6">
       {/* Header */}
@@ -263,12 +282,20 @@ export function CompanyList() {
           </div>
         </div>
       )}
-      
+
       {/* Mensaje cuando no hay empresas - ya no es necesario aquí porque está en la tabla */}
 
       {/* Slide-in Modal */}
-      <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear nueva empresa">
-        <CreateCompanyForm onSubmit={createCompany} onCancel={() => setIsModalOpen(false)} />
+      <SlideModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Crear nueva empresa"
+      >
+        <CreateCompanyForm
+          onSubmit={handleCreateCompany}
+          onCancel={() => setIsModalOpen(false)}
+          onSuccess={handleCreateSuccess}
+        />
       </SlideModal>
     </div>
   )

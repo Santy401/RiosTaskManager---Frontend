@@ -7,27 +7,92 @@ import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
 import { Label } from "@/app/ui/components/StyledComponents/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
-import { Switch } from "@/app/ui/components/StyledComponents/switch"
+import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 
 interface CreateAreaFormProps {
-  onSubmit: (data: any) => void
+  onSubmit: (data: any) => Promise<void> | void
   onCancel: () => void
+  onSuccess?: () => void
 }
 
-export function CreateAreaForm({ onSubmit, onCancel }: CreateAreaFormProps) {
+export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     state: "activo" as "activo" | "inactivo",
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
+    
+    if (!formData.name.trim()) {
+      setError("El nombre del área es obligatorio")
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setSuccess(false)
+
+    try {
+      // Ejecutar la función onSubmit (que debería ser async)
+      await onSubmit(formData)
+      
+      // Mostrar estado de éxito
+      setSuccess(true)
+      
+      // Esperar un momento para mostrar el éxito y luego cerrar
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess()
+        }
+      }, 1000)
+      
+    } catch (err: any) {
+      console.error('Error creando área:', err)
+      setError(err.message || "Error al crear el área. Por favor, intenta nuevamente.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    // Limpiar error cuando el usuario empiece a escribir
+    if (error) setError(null)
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
       <div className="flex-1 px-6 py-6 space-y-6">
+        {/* Estado de éxito */}
+        {success && (
+          <div className="p-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              <div>
+                <p className="text-sm font-medium text-emerald-400">Área creada exitosamente</p>
+                <p className="text-xs text-emerald-400/80">Redirigiendo...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mensaje de error */}
+        {error && !success && (
+          <div className="p-4 rounded-lg bg-red-500/20 border border-red-500/30">
+            <div className="flex items-center gap-3">
+              <XCircle className="h-5 w-5 text-red-400" />
+              <div>
+                <p className="text-sm font-medium text-red-400">Error al crear área</p>
+                <p className="text-xs text-red-400/80">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Nombre del Área */}
         <div className="space-y-2">
           <Label htmlFor="nombre" className="text-sm font-medium text-foreground">
@@ -37,9 +102,10 @@ export function CreateAreaForm({ onSubmit, onCancel }: CreateAreaFormProps) {
             id="nombre"
             placeholder="Ej: Recursos Humanos, Tecnología, Ventas..."
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => handleInputChange("name", e.target.value)}
             className="bg-secondary/50 border-border text-white"
             required
+            disabled={isLoading || success}
           />
         </div>
 
@@ -50,7 +116,8 @@ export function CreateAreaForm({ onSubmit, onCancel }: CreateAreaFormProps) {
           </Label>
           <Select 
             value={formData.state} 
-            onValueChange={(value: "activo" | "inactivo") => setFormData({ ...formData, state: value })}
+            onValueChange={(value: "activo" | "inactivo") => handleInputChange("state", value)}
+            disabled={isLoading || success}
           >
             <SelectTrigger className="bg-secondary/50 border-border text-white">
               <SelectValue />
@@ -87,15 +154,28 @@ export function CreateAreaForm({ onSubmit, onCancel }: CreateAreaFormProps) {
             variant="ghost" 
             onClick={onCancel} 
             className="hover:bg-secondary"
+            disabled={isLoading}
           >
-            Cancelar
+            {isLoading ? "Cancelando..." : "Cancelar"}
           </Button>
           <Button 
             type="submit" 
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-            disabled={!formData.name}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-24"
+            disabled={!formData.name.trim() || isLoading || success}
           >
-            Crear Área
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Creando...
+              </>
+            ) : success ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Creado
+              </>
+            ) : (
+              "Crear Área"
+            )}
           </Button>
         </div>
       </div>

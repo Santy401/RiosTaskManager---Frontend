@@ -10,14 +10,16 @@ import { Textarea } from "@/app/ui/components/StyledComponents/textarea"
 import { useCompany } from "@/app/presentation/hooks/Company/useCompany"
 import { useArea } from "@/app/presentation/hooks/Area/useArea"
 import { useUser } from "@/app/presentation/hooks/User/useUser"
+import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 
 interface CreateTaskFormProps {
-  onSubmit: (data: any) => void
+  onSubmit: (data: any) => Promise<void> | void
   onCancel: () => void
+  onSuccess?: () => void
   initialData?: any // Para modo edición
 }
 
-export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFormProps) {
+export function CreateTaskForm({ onSubmit, onCancel, onSuccess, initialData }: CreateTaskFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -28,7 +30,12 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
     userId: "",
   })
 
-  const { getAllCompay: getAllCompanies, isLoading: companiesLoading } = useCompany();
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [loadingData, setLoadingData] = useState(true)
+
+  useCompany();
   const { getAllAreas: getAllAreas, isLoading: areasLoading } = useArea();
   const { getAllUsers, isLoading: usersLoading } = useUser();
 
@@ -42,6 +49,7 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
     if (hasLoaded.current) return;
 
     const loadSelectData = async () => {
+      setLoadingData(true)
       try {
         // ✅ Hacer las llamadas en paralelo
         const [companiesResponse, areasResponse, usersResponse] = await Promise.all([
@@ -53,23 +61,31 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
         if (companiesResponse.ok) {
           const companiesData = await companiesResponse.json();
           setCompanies(companiesData);
+        } else {
+          console.error('Error cargando empresas:', companiesResponse.status);
         }
 
         if (areasResponse.ok) {
           const areasData = await areasResponse.json();
           setAreas(areasData);
+        } else {
+          console.error('Error cargando áreas:', areasResponse.status);
         }
 
         if (usersResponse.ok) {
           const usersData = await usersResponse.json();
           setUsers(usersData);
+        } else {
+          console.error('Error cargando usuarios:', usersResponse.status);
         }
 
         hasLoaded.current = true; // ✅ Marcar como cargado
 
       } catch (error) {
         console.error('Error cargando datos:', error);
-        // ✅ Mantener datos mock en caso de error
+        setError("Error al cargar los datos. Por favor, intente nuevamente.");
+      } finally {
+        setLoadingData(false)
       }
     };
 
@@ -91,24 +107,138 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
     }
   }, [initialData]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const submitData = {
-      ...formData,
-      dueDate: new Date(formData.dueDate),
-      // Para modo edición, incluir el ID
-      ...(initialData?.id && { id: initialData.id })
+    // Validaciones
+    if (!formData.name.trim()) {
+      setError("El nombre de la tarea es obligatorio")
+      return
+    }
+    if (!formData.description.trim()) {
+      setError("La descripción es obligatoria")
+      return
+    }
+    if (!formData.dueDate) {
+      setError("La fecha de vencimiento es obligatoria")
+      return
+    }
+    if (!formData.companyId) {
+      setError("Debe seleccionar una empresa")
+      return
+    }
+    if (!formData.areaId) {
+      setError("Debe seleccionar un área")
+      return
+    }
+    if (!formData.userId) {
+      setError("Debe seleccionar un usuario responsable")
+      return
     }
 
-    onSubmit(submitData)
+    // Validar fecha futura
+    const selectedDate = new Date(formData.dueDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    if (selectedDate < today) {
+      setError("La fecha de vencimiento no puede ser en el pasado")
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setSuccess(false)
+
+    try {
+      const submitData = {
+        ...formData,
+        dueDate: new Date(formData.dueDate),
+        // Para modo edición, incluir el ID
+        ...(initialData?.id && { id: initialData.id })
+      }
+
+      await onSubmit(submitData)
+
+      // Mostrar estado de éxito
+      setSuccess(true)
+
+      // Esperar un momento para mostrar el éxito y luego cerrar
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess()
+        }
+      }, 1500)
+
+    } catch (err: any) {
+      console.error('Error creando tarea:', err)
+      setError(err.message || "Error al crear la tarea. Por favor, intenta nuevamente.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const isLoading = companiesLoading || areasLoading || usersLoading;
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    // Limpiar error cuando el usuario empiece a escribir/seleccionar
+    if (error) setError(null)
+  }
+
+  const isFormValid = formData.name.trim() &&
+    formData.description.trim() &&
+    formData.dueDate &&
+    formData.companyId &&
+    formData.areaId &&
+    formData.userId
+
+  const isSubmitting = isLoading || loadingData
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
-      <div className="flex-1 px-6 py-6 space-y-6">
+      <div className="flex-1 px-6 py-6 space-y-6 overflow-y-auto max-h-[70vh]">
+        {/* Estado de éxito */}
+        {success && (
+          <div className="p-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              <div>
+                <p className="text-sm font-medium text-emerald-400">
+                  {initialData ? "Tarea actualizada exitosamente" : "Tarea creada exitosamente"}
+                </p>
+                <p className="text-xs text-emerald-400/80">Redirigiendo...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mensaje de error */}
+        {error && !success && (
+          <div className="p-4 rounded-lg bg-red-500/20 border border-red-500/30">
+            <div className="flex items-center gap-3">
+              <XCircle className="h-5 w-5 text-red-400" />
+              <div>
+                <p className="text-sm font-medium text-red-400">
+                  {initialData ? "Error al actualizar tarea" : "Error al crear tarea"}
+                </p>
+                <p className="text-xs text-red-400/80">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Loading de datos */}
+        {loadingData && (
+          <div className="p-4 rounded-lg bg-blue-500/20 border border-blue-500/30">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+              <div>
+                <p className="text-sm font-medium text-blue-400">Cargando datos...</p>
+                <p className="text-xs text-blue-400/80">Por favor espere</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Nombre de la Tarea */}
         <div className="space-y-2">
           <Label htmlFor="name" className="text-sm font-medium text-foreground">
@@ -118,9 +248,10 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
             id="name"
             placeholder="Ingrese el nombre de la tarea"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            onChange={(e) => handleInputChange("name", e.target.value)}
             className="bg-secondary/50 border-border text-white"
             required
+            disabled={isSubmitting || success}
           />
         </div>
 
@@ -133,9 +264,10 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
             id="description"
             placeholder="Describa los detalles de la tarea..."
             value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            onChange={(e) => handleInputChange("description", e.target.value)}
             className="bg-secondary/50 border-border text-white min-h-[100px] resize-none"
             required
+            disabled={isSubmitting || success}
           />
         </div>
 
@@ -148,9 +280,11 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
             id="dueDate"
             type="date"
             value={formData.dueDate}
-            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+            onChange={(e) => handleInputChange("dueDate", e.target.value)}
             className="bg-secondary/50 border-border text-white"
             required
+            disabled={isSubmitting || success}
+            min={new Date().toISOString().split('T')[0]} // No permitir fechas pasadas
           />
         </div>
 
@@ -159,7 +293,11 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
           <Label htmlFor="status" className="text-sm font-medium text-foreground">
             Estado
           </Label>
-          <Select value={formData.status} onValueChange={(value: "pendiente" | "en_progreso" | "terminada") => setFormData({ ...formData, status: value })}>
+          <Select
+            value={formData.status}
+            onValueChange={(value: "pendiente" | "en_progreso" | "terminada") => handleInputChange("status", value)}
+            disabled={isSubmitting || success}
+          >
             <SelectTrigger className="bg-secondary/50 border-border text-white">
               <SelectValue />
             </SelectTrigger>
@@ -193,11 +331,11 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
           </Label>
           <Select
             value={formData.companyId}
-            onValueChange={(value) => setFormData({ ...formData, companyId: value })}
-            disabled={isLoading}
+            onValueChange={(value) => handleInputChange("companyId", value)}
+            disabled={isSubmitting || success}
           >
             <SelectTrigger className="bg-secondary/50 border-border text-white">
-              <SelectValue placeholder={isLoading ? "Cargando empresas..." : "Seleccione una empresa"} />
+              <SelectValue placeholder={loadingData ? "Cargando empresas..." : "Seleccione una empresa"} />
             </SelectTrigger>
             <SelectContent>
               {companies.map((company) => (
@@ -216,11 +354,11 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
           </Label>
           <Select
             value={formData.areaId}
-            onValueChange={(value) => setFormData({ ...formData, areaId: value })}
-            disabled={isLoading}
+            onValueChange={(value) => handleInputChange("areaId", value)}
+            disabled={isSubmitting || success}
           >
             <SelectTrigger className="bg-secondary/50 border-border text-white">
-              <SelectValue placeholder={isLoading ? "Cargando áreas..." : "Seleccione un área"} />
+              <SelectValue placeholder={loadingData ? "Cargando áreas..." : "Seleccione un área"} />
             </SelectTrigger>
             <SelectContent>
               {areas.map((area) => (
@@ -239,11 +377,11 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
           </Label>
           <Select
             value={formData.userId}
-            onValueChange={(value) => setFormData({ ...formData, userId: value })}
-            disabled={isLoading}
+            onValueChange={(value) => handleInputChange("userId", value)}
+            disabled={isSubmitting || success}
           >
             <SelectTrigger className="bg-secondary/50 border-border text-white">
-              <SelectValue placeholder={isLoading ? "Cargando usuarios..." : "Seleccione un usuario"} />
+              <SelectValue placeholder={loadingData ? "Cargando usuarios..." : "Seleccione un usuario"} />
             </SelectTrigger>
             <SelectContent>
               {users.map((user) => (
@@ -270,15 +408,30 @@ export function CreateTaskForm({ onSubmit, onCancel, initialData }: CreateTaskFo
             variant="ghost"
             onClick={onCancel}
             className="hover:bg-secondary"
+            disabled={isSubmitting}
           >
-            Cancelar
+            {isSubmitting ? "Cancelando..." : "Cancelar"}
           </Button>
           <Button
             type="submit"
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-            disabled={!formData.name || !formData.description || !formData.dueDate || !formData.companyId || !formData.areaId || !formData.userId || isLoading}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-32"
+            disabled={!isFormValid || isSubmitting || success}
           >
-            {initialData ? "Actualizar Tarea" : "Crear Tarea"}
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                {initialData ? "Actualizando..." : "Creando..."}
+              </>
+            ) : success ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                {initialData ? "Actualizada" : "Creada"}
+              </>
+            ) : initialData ? (
+              "Actualizar Tarea"
+            ) : (
+              "Crear Tarea"
+            )}
           </Button>
         </div>
       </div>
