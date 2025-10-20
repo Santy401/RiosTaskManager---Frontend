@@ -234,6 +234,9 @@ export function TasksPage() {
     filterStatus === "all" || task.status === filterStatus
   )
 
+  // Verificar si hay tareas para mostrar
+  const hasTasks = filteredTasks.length > 0
+
   // Función para obtener el color del badge según el estado
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -322,81 +325,99 @@ export function TasksPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTasks.map((task) => (
-              <TableRow
-                key={task.id}
-                className="border-border hover:bg-secondary/30 transition-colors duration-200"
-                onContextMenu={(e) => handleContextMenu(e, task)}
-                onDoubleClick={(e) => handleDoubleClick(e, task)} // ✅ Doble click
-                onClick={(e) => handleDoubleTap(e, task)} // ✅ Doble tap
-                onTouchStart={(e) => handleDoubleTap(e, task)} // ✅ Doble tap en móvil
-                style={{ cursor: 'context-menu' }}
-              >
-                <TableCell className="font-medium text-foreground">
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{task.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground max-w-md">
-                  <div className="line-clamp-2">{task.description}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-blue-500/20 text-blue-400 text-xs">
-                        <Building2 className="h-3 w-3" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm text-[#7a7a7a]">{task.company.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-green-500/20 text-green-400 text-xs">
-                        <MapPin className="h-3 w-3" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm text-[#7a7a7a]">{task.area.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xs">
-                        <User className="h-3 w-3" />
-                      </AvatarFallback>
-                    </Avatar>
+            {hasTasks ? (
+              filteredTasks.map((task) => (
+                <TableRow
+                  key={task.id}
+                  className="border-border hover:bg-secondary/30 transition-colors duration-200"
+                  onContextMenu={(e) => handleContextMenu(e, task)}
+                  onDoubleClick={(e) => handleDoubleClick(e, task)} // ✅ Doble click
+                  onClick={(e) => handleDoubleTap(e, task)} // ✅ Doble tap
+                  onTouchStart={(e) => handleDoubleTap(e, task)} // ✅ Doble tap en móvil
+                  style={{ cursor: 'context-menu' }}
+                >
+                  <TableCell className="font-medium text-foreground">
                     <div className="flex flex-col">
-                      <span className="text-sm text-[#7a7a7a]">{task.user.name || 'Sin asignar'}</span>
-                      <span className="text-xs text-muted-foreground">{task.user.email}</span>
+                      <span className="font-semibold">{task.name}</span>
                     </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground max-w-md">
+                    <div className="line-clamp-2">{task.description}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-blue-500/20 text-blue-400 text-xs">
+                          <Building2 className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-[#7a7a7a]">{task.company.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-green-500/20 text-green-400 text-xs">
+                          <MapPin className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-[#7a7a7a]">{task.area.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xs">
+                          <User className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm text-[#7a7a7a]">{task.user.name || 'Sin asignar'}</span>
+                        <span className="text-xs text-muted-foreground">{task.user.email}</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge {...getStatusBadgeVariant(task.status)}>
+                      {task.status === 'terminada' ? 'Terminada' :
+                        task.status === 'en_progreso' ? 'En Progreso' : 'Pendiente'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className={`flex items-center gap-2 ${isOverdue(task.dueDate) && task.status !== 'terminada' ? 'text-red-400' : 'text-muted-foreground'}`}>
+                      <Calendar className="h-4 w-4" />
+                      <span className={isOverdue(task.dueDate) && task.status !== 'terminada' ? 'font-semibold' : ''}>
+                        {formatDate(task.dueDate)}
+                      </span>
+                      {isOverdue(task.dueDate) && task.status !== 'terminada' && (
+                        <Badge variant="destructive" className="text-xs">
+                          Vencida
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatDate(task.createdAt)}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8">
+                  <div className="text-center text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No se encontraron tareas</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => setIsModalOpen(true)}
+                    >
+                      Crear primera tarea
+                    </Button>
                   </div>
-                </TableCell>
-                <TableCell>
-                  <Badge {...getStatusBadgeVariant(task.status)}>
-                    {task.status === 'terminada' ? 'Terminada' :
-                      task.status === 'en_progreso' ? 'En Progreso' : 'Pendiente'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className={`flex items-center gap-2 ${isOverdue(task.dueDate) && task.status !== 'terminada' ? 'text-red-400' : 'text-muted-foreground'}`}>
-                    <Calendar className="h-4 w-4" />
-                    <span className={isOverdue(task.dueDate) && task.status !== 'terminada' ? 'font-semibold' : ''}>
-                      {formatDate(task.dueDate)}
-                    </span>
-                    {isOverdue(task.dueDate) && task.status !== 'terminada' && (
-                      <Badge variant="destructive" className="text-xs">
-                        Vencida
-                      </Badge>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatDate(task.createdAt)}
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
@@ -444,82 +465,68 @@ export function TasksPage() {
         </div>
       )}
 
-      {/* Estados de carga y error */}
+      {/* Estados de carga */}
       {isLoading && (
         <div className="flex justify-center items-center p-8">
           <div className="text-foreground">Cargando tareas...</div>
         </div>
       )}
 
-      {filteredTasks.length === 0 && !isLoading && (
-        <div className="flex justify-center items-center p-8">
-          <div className="text-center text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No se encontraron tareas</p>
+      {/* Pagination - Solo se muestra si hay tareas */}
+      {hasTasks && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Select defaultValue="10">
+              <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">
+              Mostrando {Math.min(filteredTasks.length, itemsPerPage)} de {filteredTasks.length} tareas
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
             <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => setIsModalOpen(true)}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
             >
-              Crear primera tarea
+              <ChevronLeft className="h-4 w-4 text-white" />
+            </Button>
+            {[1, 2, 3, 4, 5].map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "ghost"}
+                size="icon"
+                className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <span className="px-2 text-muted-foreground">...</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
+              {Math.ceil(filteredTasks.length / itemsPerPage)}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage >= Math.ceil(filteredTasks.length / itemsPerPage)}
+            >
+              <ChevronRight className="h-4 w-4 text-white" />
             </Button>
           </div>
         </div>
       )}
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Select defaultValue="10">
-            <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">
-            Mostrando {Math.min(filteredTasks.length, itemsPerPage)} de {filteredTasks.length} tareas
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4 text-white" />
-          </Button>
-          {[1, 2, 3, 4, 5].map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "ghost"}
-              size="icon"
-              className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </Button>
-          ))}
-          <span className="px-2 text-muted-foreground">...</span>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
-            {Math.ceil(filteredTasks.length / itemsPerPage)}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={currentPage >= Math.ceil(filteredTasks.length / itemsPerPage)}
-          >
-            <ChevronRight className="h-4 w-4 text-white" />
-          </Button>
-        </div>
-      </div>
 
       {/* Slide-in Modal */}
       <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear nueva tarea">

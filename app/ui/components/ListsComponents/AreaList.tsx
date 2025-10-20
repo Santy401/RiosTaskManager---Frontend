@@ -65,6 +65,9 @@ export function AreaList() {
     filterEstado === "all" || area.state === filterEstado
   )
 
+  // Verificar si hay áreas para mostrar
+  const hasAreas = filteredAreas.length > 0
+
   const handleMenuAction = async (action: string, userId: string, userName: string) => {
     try {
       switch (action) {
@@ -143,43 +146,61 @@ export function AreaList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAreas.map((area) => (
-              <TableRow key={area.id} className="border-border hover:bg-secondary/30"
-                onContextMenu={(e) => handleContextMenu(e, area.id, area.name)}
-                onDoubleClick={(e) => handleDoubleClick(e, area.id, area.name)}
-                onClick={(e) => handleDoubleTap(e, area.id, area.name)}
-                onTouchStart={(e) => handleDoubleTap(e, area.id, area.name)}
-              >
-                <TableCell>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={undefined} />
-                    <AvatarFallback className="bg-blue-500/20 text-blue-400 text-xs">
-                      <MapPin className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                </TableCell>
-                <TableCell className="font-medium text-foreground">
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{area.name}</span>
+            {hasAreas ? (
+              filteredAreas.map((area) => (
+                <TableRow key={area.id} className="border-border hover:bg-secondary/30"
+                  onContextMenu={(e) => handleContextMenu(e, area.id, area.name)}
+                  onDoubleClick={(e) => handleDoubleClick(e, area.id, area.name)}
+                  onClick={(e) => handleDoubleTap(e, area.id, area.name)}
+                  onTouchStart={(e) => handleDoubleTap(e, area.id, area.name)}
+                >
+                  <TableCell>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={undefined} />
+                      <AvatarFallback className="bg-blue-500/20 text-blue-400 text-xs">
+                        <MapPin className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </TableCell>
+                  <TableCell className="font-medium text-foreground">
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{area.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={area.state === "activo" ? "default" : "secondary"}
+                      className={
+                        area.state === "activo"
+                          ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                          : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                      }
+                    >
+                      {area.state === "activo" ? "Activo" : "Inactivo"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(area.createdAt).toLocaleDateString('es-ES')}
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-8">
+                  <div className="text-center text-muted-foreground">
+                    <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No se encontraron áreas</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => setIsModalOpen(true)}
+                    >
+                      Crear primera área
+                    </Button>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={area.state === "activo" ? "default" : "secondary"}
-                    className={
-                      area.state === "activo"
-                        ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                        : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                    }
-                  >
-                    {area.state === "activo" ? "Activo" : "Inactivo"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {new Date(area.createdAt).toLocaleDateString('es-ES')}
-                </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
         <ContextMenu
@@ -194,80 +215,66 @@ export function AreaList() {
         />
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Select defaultValue="10">
-            <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">
-            Mostrando {Math.min(filteredAreas.length, itemsPerPage)} de {filteredAreas.length} áreas
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4 text-white" />
-          </Button>
-          {[1, 2, 3, 4, 5].map((page) => (
+      {/* Pagination - Solo se muestra si hay áreas */}
+      {hasAreas && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Select defaultValue="10">
+              <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-sm text-muted-foreground">
+              Mostrando {Math.min(filteredAreas.length, itemsPerPage)} de {filteredAreas.length} áreas
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
             <Button
-              key={page}
-              variant={currentPage === page ? "default" : "ghost"}
+              variant="ghost"
               size="icon"
-              className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
-              onClick={() => setCurrentPage(page)}
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
             >
-              {page}
+              <ChevronLeft className="h-4 w-4 text-white" />
             </Button>
-          ))}
-          <span className="px-2 text-muted-foreground">...</span>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
-            {Math.ceil(filteredAreas.length / itemsPerPage)}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={currentPage >= Math.ceil(filteredAreas.length / itemsPerPage)}
-          >
-            <ChevronRight className="h-4 w-4 text-white" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Estados de carga y error */}
-      {isLoading && (
-        <div className="flex justify-center items-center p-8">
-          <div className="text-foreground">Cargando áreas...</div>
+            {[1, 2, 3, 4, 5].map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "ghost"}
+                size="icon"
+                className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <span className="px-2 text-muted-foreground">...</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
+              {Math.ceil(filteredAreas.length / itemsPerPage)}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              disabled={currentPage >= Math.ceil(filteredAreas.length / itemsPerPage)}
+            >
+              <ChevronRight className="h-4 w-4 text-white" />
+            </Button>
+          </div>
         </div>
       )}
 
-      {filteredAreas.length === 0 && !isLoading && (
+      {/* Estados de carga */}
+      {isLoading && (
         <div className="flex justify-center items-center p-8">
-          <div className="text-center text-muted-foreground">
-            <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No se encontraron áreas</p>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => setIsModalOpen(true)}
-            >
-              Crear primera área
-            </Button>
-          </div>
+          <div className="text-foreground">Cargando áreas...</div>
         </div>
       )}
 

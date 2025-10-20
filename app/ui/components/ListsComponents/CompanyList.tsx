@@ -62,6 +62,8 @@ export function CompanyList() {
     }
   }
 
+  const hasCompanies = companies.length > 0
+
   const handleMenuAction = async (action: string, userId: string, userName: string) => {
     try {
       switch (action) {
@@ -146,41 +148,61 @@ export function CompanyList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {companies.map((company) => (
-              <TableRow key={company.id} className="border-border hover:bg-secondary/30"
-                onContextMenu={(e) => handleContextMenu(e, company.id, company.name)}
-                onDoubleClick={(e) => handleDoubleClick(e, company.id, company.name)}
-                onClick={(e) => handleDoubleTap(e, company.id, company.name)}
-                onTouchStart={(e) => handleDoubleTap(e, company.id, company.name)}
-              >
-                <TableCell>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={undefined} />
-                    <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                      <Building2 className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
+            {hasCompanies ? (
+              companies.map((company) => (
+                <TableRow key={company.id} className="border-border hover:bg-secondary/30"
+                  onContextMenu={(e) => handleContextMenu(e, company.id, company.name)}
+                  onDoubleClick={(e) => handleDoubleClick(e, company.id, company.name)}
+                  onClick={(e) => handleDoubleTap(e, company.id, company.name)}
+                  onTouchStart={(e) => handleDoubleTap(e, company.id, company.name)}
+                >
+                  <TableCell>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={undefined} />
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                        <Building2 className="h-4 w-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </TableCell>
+                  <TableCell className="font-medium text-foreground">{company.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{company.nit}</TableCell>
+                  <TableCell className="text-muted-foreground">{company.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={company.dian === "Activa" ? "default" : "secondary"} className={company.dian === "Activa" ? "bg-emerald-500/20 text-emerald-400" : ""}>
+                      {company.dian}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{company.firma}</TableCell>
+                  <TableCell className="text-muted-foreground">{company.usuario}</TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">{company.contraseña}</TableCell>
+                  <TableCell className="text-muted-foreground">{company.servidorCorreo}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs">
+                      {company.tipo}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{'na'}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={11} className="text-center py-8">
+                  <div className="flex justify-center items-center">
+                    <div className="text-center text-muted-foreground">
+                      <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No se encontraron Empresas</p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => setIsModalOpen(true)}
+                      >
+                        Crear primera empresa
+                      </Button>
+                    </div>
+                  </div>
                 </TableCell>
-                <TableCell className="font-medium text-foreground">{company.name}</TableCell>
-                <TableCell className="text-muted-foreground">{company.nit}</TableCell>
-                <TableCell className="text-muted-foreground">{company.email}</TableCell>
-                <TableCell>
-                  <Badge variant={company.dian === "Activa" ? "default" : "secondary"} className={company.dian === "Activa" ? "bg-emerald-500/20 text-emerald-400" : ""}>
-                    {company.dian}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{company.firma}</TableCell>
-                <TableCell className="text-muted-foreground">{company.usuario}</TableCell>
-                <TableCell className="text-muted-foreground font-mono text-xs">{company.contraseña}</TableCell>
-                <TableCell className="text-muted-foreground">{company.servidorCorreo}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-xs">
-                    {company.tipo}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{'na'}</TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
         <ContextMenu
@@ -195,49 +217,54 @@ export function CompanyList() {
         />
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Select defaultValue="10">
-            <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-          >
-            <ChevronLeft className="h-4 w-4 text-white" />
-          </Button>
-          {[1, 2, 3, 4, 5].map((page) => (
+      {/* Pagination - Solo se muestra si hay empresas */}
+      {hasCompanies && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Select defaultValue="10">
+              <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-1">
             <Button
-              key={page}
-              variant={currentPage === page ? "default" : "ghost"}
+              variant="ghost"
               size="icon"
-              className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
-              onClick={() => setCurrentPage(page)}
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             >
-              {page}
+              <ChevronLeft className="h-4 w-4 text-white" />
             </Button>
-          ))}
-          <span className="px-2 text-muted-foreground">...</span>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
-            {Math.ceil(companies.length / itemsPerPage)}
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(currentPage + 1)}>
-            <ChevronRight className="h-4 w-4 text-white" />
-          </Button>
+            {[1, 2, 3, 4, 5].map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "ghost"}
+                size="icon"
+                className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <span className="px-2 text-muted-foreground">...</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
+              {Math.ceil(companies.length / itemsPerPage)}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(currentPage + 1)}>
+              <ChevronRight className="h-4 w-4 text-white" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
+      
+      {/* Mensaje cuando no hay empresas - ya no es necesario aquí porque está en la tabla */}
 
       {/* Slide-in Modal */}
       <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear nueva empresa">

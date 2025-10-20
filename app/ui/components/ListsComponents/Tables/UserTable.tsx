@@ -8,7 +8,7 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, EllipsisVertical } from "lucide-react"
+import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, EllipsisVertical, User } from "lucide-react"
 import { SlideModal } from "../../ModalComponents/slideModal"
 import { AddUserForm } from "../../ModalComponents/createUser"
 import { useUser } from "@/app/presentation/hooks/User/useUser"
@@ -72,6 +72,9 @@ export function UsersTable() {
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Verificar si hay usuarios para mostrar
+  const hasUsers = filteredUsers.length > 0
 
   const handleMenuAction = async (action: string, userId: string, userName: string) => {
     try {
@@ -161,44 +164,62 @@ export function UsersTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.map((user) => (
-              <TableRow
-                key={user.id}
-                className="border-border hover:bg-secondary/30 cursor-context-menu"
-                onContextMenu={(e) => handleTableContextMenu(e, user.id, user.name)}
-              >
-                <TableCell>
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-secondary text-foreground text-xs">
-                      {user.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+            {hasUsers ? (
+              filteredUsers.map((user) => (
+                <TableRow
+                  key={user.id}
+                  className="border-border hover:bg-secondary/30 cursor-context-menu"
+                  onContextMenu={(e) => handleTableContextMenu(e, user.id, user.name)}
+                >
+                  <TableCell>
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-secondary text-foreground text-xs">
+                        {user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TableCell>
+                  <TableCell className="font-medium text-foreground">{user.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                  <TableCell>
+                    {user.verified ? (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {user.banned ? (
+                      <XCircle className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30">
+                      {user.role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{user.created || "N/A"}</TableCell>
+                  <TableCell className="text-muted-foreground">{user.lastActive || "N/A"}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8">
+                  <div className="text-center text-muted-foreground">
+                    <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No se encontraron usuarios</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => setIsModalOpen(true)}
+                    >
+                      Crear primer usuario
+                    </Button>
+                  </div>
                 </TableCell>
-                <TableCell className="font-medium text-foreground">{user.name}</TableCell>
-                <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                <TableCell>
-                  {user.verified ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                  ) : (
-                    <Circle className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {user.banned ? (
-                    <XCircle className="h-5 w-5 text-red-500" />
-                  ) : (
-                    <Circle className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30">
-                    {user.role}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{user.created || "N/A"}</TableCell>
-                <TableCell className="text-muted-foreground">{user.lastActive || "N/A"}</TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
 
@@ -221,48 +242,51 @@ export function UsersTable() {
         <div className="text-red-500 text-sm">Error: {error}</div>
       )}
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Select defaultValue="10">
-            <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-          >
-            <ChevronLeft className="h-4 w-4 text-white" />
-          </Button>
-          {[1, 2, 3, 4, 5].map((page) => (
+      {/* Pagination - Solo se muestra si hay usuarios */}
+      {hasUsers && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Select defaultValue="10">
+              <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1">
             <Button
-              key={page}
-              variant={currentPage === page ? "default" : "ghost"}
+              variant="ghost"
               size="icon"
-              className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
-              onClick={() => setCurrentPage(page)}
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             >
-              {page}
+              <ChevronLeft className="h-4 w-4 text-white" />
             </Button>
-          ))}
-          <span className="px-2 text-muted-foreground">...</span>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
-            24
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(currentPage + 1)}>
-            <ChevronRight className="h-4 w-4 text-white" />
-          </Button>
+            {[1, 2, 3, 4, 5].map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "ghost"}
+                size="icon"
+                className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
+                onClick={() => setCurrentPage(page)}
+              >
+                {page}
+              </Button>
+            ))}
+            <span className="px-2 text-muted-foreground">...</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
+              24
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(currentPage + 1)}>
+              <ChevronRight className="h-4 w-4 text-white" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <SlideModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crea un nuevo usuario">
         <AddUserForm onSubmit={handleAddUser} onCancel={() => setIsModalOpen(false)} />

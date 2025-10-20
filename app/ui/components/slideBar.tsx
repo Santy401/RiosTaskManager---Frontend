@@ -94,20 +94,22 @@ export const SlideBar = ({ isSelected, setIsSelected }: SidebarProps) => {
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 hover:rounded-md transition-colors ml-auto cursor-pointer"
-          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="p-1.5 rounded-md transition-all duration-300 ml-auto cursor-pointer"
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isCollapsed ? (
             <Image
-              src='/favicon.ico'
+              src="/favicon.ico"
               alt="Logo RiosBackend"
               width={30}
               height={30}
+              className="transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]"
             />
           ) : (
-            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            <ChevronLeft className="w-4 h-4 text-muted-foreground transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]" />
           )}
         </button>
+
       </div>
 
       {/* Navigation Items */}
