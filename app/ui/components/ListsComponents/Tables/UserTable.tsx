@@ -105,6 +105,30 @@ export function UsersTable() {
     handleContextMenu(e, userId, userName)
   }
 
+  const generateColorFromName = (name: string) => {
+    const colors = [
+      'bg-red-500/20 text-red-400',
+      'bg-blue-500/20 text-blue-400',
+      'bg-green-500/20 text-green-400',
+      'bg-yellow-500/20 text-yellow-400',
+      'bg-purple-500/20 text-purple-400',
+      'bg-pink-500/20 text-pink-400',
+      'bg-indigo-500/20 text-indigo-400',
+      'bg-teal-500/20 text-teal-400',
+      'bg-orange-500/20 text-orange-400',
+      'bg-cyan-500/20 text-cyan-400'
+    ];
+
+    // Generar un índice basado en el nombre
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+
+    return colors[index];
+  };
+
   return (
     <div className="w-full p-6 space-y-6">
       <div className="space-y-2">
@@ -173,7 +197,7 @@ export function UsersTable() {
                 >
                   <TableCell>
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-secondary text-foreground text-xs">
+                      <AvatarFallback className={`text-xs ${generateColorFromName(user.name)}`}>
                         {user.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
