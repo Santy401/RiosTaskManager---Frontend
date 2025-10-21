@@ -19,14 +19,20 @@ interface CreateCompanyFormProps {
 export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompanyFormProps) {
   const [formData, setFormData] = useState({
     name: "",
+    tipo: "A",
     nit: "",
-    email: "",
+    cedula: "",
     dian: "Activa",
     firma: "Digital",
+    softwareContable: "",
     usuario: "",
     contraseña: "",
     servidorCorreo: "",
-    tipo: "A",
+    email: "",
+    claveCorreo: "",
+    claveCC: "",
+    claveSS: "",
+    claveICA: "",
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -281,24 +287,98 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompa
           </Select>
         </div>
 
-        {/* Firma Type */}
+        {/* Cedula Field */}
         <div className="space-y-2">
-          <Label htmlFor="firma" className="text-sm font-medium text-foreground">
-            Tipo de Firma
+          <Label htmlFor="cedula" className="text-sm font-medium text-foreground">
+            Cédula
           </Label>
-          <Select
-            value={formData.firma}
-            onValueChange={(value) => handleInputChange("firma", value)}
+          <Input
+            id="cedula"
+            placeholder="Número de cédula"
+            value={formData.cedula}
+            onChange={(e) => handleInputChange("cedula", e.target.value)}
+            className="bg-secondary/50 border-border text-white"
             disabled={isLoading || success}
-          >
-            <SelectTrigger className="bg-secondary/50 border-border text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Digital">Digital</SelectItem>
-              <SelectItem value="Tradicional">Tradicional</SelectItem>
-            </SelectContent>
-          </Select>
+          />
+        </div>
+
+        {/* Software Contable Field */}
+        <div className="space-y-2">
+          <Label htmlFor="softwareContable" className="text-sm font-medium text-foreground">
+            Software Contable
+          </Label>
+          <Input
+            id="softwareContable"
+            placeholder="Nombre del software contable"
+            value={formData.softwareContable}
+            onChange={(e) => handleInputChange("softwareContable", e.target.value)}
+            className="bg-secondary/50 border-border text-white"
+            disabled={isLoading || success}
+          />
+        </div>
+
+        {/* Clave Correo Field */}
+        <div className="space-y-2">
+          <Label htmlFor="claveCorreo" className="text-sm font-medium text-foreground">
+            Clave Correo
+          </Label>
+          <Input
+            id="claveCorreo"
+            type="password"
+            placeholder="Contraseña del correo"
+            value={formData.claveCorreo}
+            onChange={(e) => handleInputChange("claveCorreo", e.target.value)}
+            className="bg-secondary/50 border-border text-white"
+            disabled={isLoading || success}
+          />
+        </div>
+
+        {/* Clave CC Field */}
+        <div className="space-y-2">
+          <Label htmlFor="claveCC" className="text-sm font-medium text-foreground">
+            Clave CC
+          </Label>
+          <Input
+            id="claveCC"
+            type="password"
+            placeholder="Clave CC"
+            value={formData.claveCC}
+            onChange={(e) => handleInputChange("claveCC", e.target.value)}
+            className="bg-secondary/50 border-border text-white"
+            disabled={isLoading || success}
+          />
+        </div>
+
+        {/* Clave SS Field */}
+        <div className="space-y-2">
+          <Label htmlFor="claveSS" className="text-sm font-medium text-foreground">
+            Clave SS
+          </Label>
+          <Input
+            id="claveSS"
+            type="password"
+            placeholder="Clave SS"
+            value={formData.claveSS}
+            onChange={(e) => handleInputChange("claveSS", e.target.value)}
+            className="bg-secondary/50 border-border text-white"
+            disabled={isLoading || success}
+          />
+        </div>
+
+        {/* Clave ICA Field */}
+        <div className="space-y-2">
+          <Label htmlFor="claveICA" className="text-sm font-medium text-foreground">
+            Clave ICA
+          </Label>
+          <Input
+            id="claveICA"
+            type="password"
+            placeholder="Clave ICA"
+            value={formData.claveICA}
+            onChange={(e) => handleInputChange("claveICA", e.target.value)}
+            className="bg-secondary/50 border-border text-white"
+            disabled={isLoading || success}
+          />
         </div>
       </div>
 

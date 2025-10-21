@@ -1,21 +1,27 @@
 import { prisma } from "./prisma";
 
-export async function getAllCompay() {
+export async function getAllCompany() {
     try {
         const companys = await prisma.company.findMany({
             select: {
                 id: true,
                 name: true,
+                tipo: true,
                 nit: true,
-                email: true,
+                cedula: true,
                 dian: true,
                 firma: true,
+                softwareContable: true,
                 usuario: true,
                 servidorCorreo: true,
-                tipo: true,
+                email: true,
+                claveCorreo: true,
+                claveCC: true,
+                claveSS: true,
+                claveICA: true,
                 contraseña: true,
                 createdAt: true,
-                updatedAt: true
+                updatedAt: true,
             },
             orderBy: {
                 createdAt: 'desc'
@@ -31,16 +37,20 @@ export async function getAllCompay() {
 
 export async function createCompany(companyData: {
   name: string;
+  tipo: string;
   nit: string;
-  email: string;
+  cedula: string;
   dian: string;
   firma: string;
+  softwareContable: string;
   usuario: string;
-  contraseña: string;
   servidorCorreo: string;
-  tipo: string;
-  createdAt: Date;
-  updatedAt: Date;
+  email: string;
+  claveCorreo: string;
+  claveCC: string;
+  claveSS: string;
+  claveICA: string;
+  contraseña: string;
 }) {
   try {
     const newCompany = await prisma.company.create({
@@ -48,14 +58,20 @@ export async function createCompany(companyData: {
       select: {
         id: true,
         name: true,
+        tipo: true,
         nit: true,
-        email: true,
+        cedula: true,
         dian: true,
         firma: true,
+        softwareContable: true,
         usuario: true,
-        contraseña: true,
         servidorCorreo: true,
-        tipo: true,
+        email: true,
+        claveCorreo: true,
+        claveCC: true,
+        claveSS: true,
+        claveICA: true,
+        contraseña: true,
         createdAt: true,
         updatedAt: true,
       }
@@ -64,6 +80,57 @@ export async function createCompany(companyData: {
     return newCompany;
   } catch (error) {
     console.error('Error creando empresa en la DB:', error);
+    throw error;
+  }
+}
+
+export async function deleteCompany(id: string) {
+    try {
+    const deletedCompany = await prisma.company.delete({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        tipo: true,
+        nit: true,
+        cedula: true,
+        dian: true,
+        firma: true,
+        softwareContable: true,
+        usuario: true,
+        servidorCorreo: true,
+        email: true,
+        claveCorreo: true,
+        claveCC: true,
+        claveSS: true,
+        claveICA: true,
+        contraseña: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
+
+    return deletedCompany;
+  } catch (error) {
+    console.error('Error eliminando empresa de la DB:', error);
+    throw error;
+  }
+}
+
+// Función adicional para verificar si la empresa existe
+export async function checkIfCompanyExists(nit: string, email: string) {
+  try {
+    const existingCompany = await prisma.company.findFirst({
+      where: {
+        OR: [
+          { nit: nit },
+          { email: email }
+        ]
+      }
+    });
+    return existingCompany;
+  } catch (error) {
+    console.error('Error verificando empresa existente:', error);
     throw error;
   }
 }

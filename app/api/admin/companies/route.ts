@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import jwt from 'jsonwebtoken'
-import { getAllCompay, createCompany } from "@/lib/company";
+import { getAllCompany, createCompany, deleteCompany } from "@/lib/company";
 
 export async function GET(request: Request) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
     }
 
-    const companies = await getAllCompay();
+    const companies = await getAllCompany();
 
     return NextResponse.json(companies);
 
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, nit, email, dian, firma, usuario, contraseña, servidorCorreo, tipo } = body;
+    const { name, tipo, nit, cedula, dian, firma, softwareContable, usuario, contraseña, servidorCorreo, email, claveCorreo, claveCC, claveSS, claveICA } = body;
 
     if (!name || !nit || !email) {
       return NextResponse.json({ error: 'Nombre, NIT y email son requeridos' }, { status: 400 });
@@ -69,16 +69,20 @@ export async function POST(request: Request) {
 
     const newCompany = await createCompany({
       name,
+      tipo,
       nit,
-      email,
+      cedula,
       dian,
       firma,
+      softwareContable,
       usuario,
       contraseña,
       servidorCorreo,
-      tipo,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      email,
+      claveCorreo,
+      claveCC,
+      claveSS,
+      claveICA
     });
 
     console.log('✅ Empresa creada exitosamente:', newCompany.id);
