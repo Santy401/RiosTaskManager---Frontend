@@ -59,6 +59,8 @@ export function TasksPage() {
     taskId: null,
     taskName: ""
   })
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [isEditMode, setIsEditMode] = useState(false)
 
   const [lastTap, setLastTap] = useState(0)
   const tapTimer = useRef<NodeJS.Timeout | null>(null)
@@ -66,7 +68,7 @@ export function TasksPage() {
   const itemsPerPage = 10
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
-  const { getAllTasks, isLoading, createTask, deleteTask } = useTask();
+  const { getAllTasks, isLoading, createTask, deleteTask, updateTask } = useTask();
 
   useEffect(() => {
     loadTasks()
@@ -180,7 +182,13 @@ export function TasksPage() {
 
         case 'edit':
           console.log('✏️ Editar tarea:', contextMenu.taskId)
-          alert(`Editar: ${contextMenu.taskName}`)
+          // Encuentra la tarea a editar
+          const taskToEdit = tasks.find(task => task.id === contextMenu.taskId)
+          if (taskToEdit) {
+            setEditingTask(taskToEdit)
+            setIsEditMode(true)
+            setIsModalOpen(true)
+          }
           break
 
         case 'delete':
@@ -267,20 +275,32 @@ export function TasksPage() {
 
   const handleCreateTask = async (taskData: any) => {
     try {
-      // Crear la tarea usando el hook
-      await createTask(taskData)
-      // El hook debería manejar la actualización del estado
+      if (isEditMode && editingTask) {
+        // Modo edición
+        await updateTask({ taskId: editingTask.id, data: taskData })
+      } else {
+        // Modo creación
+        await createTask(taskData)
+      }
     } catch (error) {
-      console.error('Error creando tarea:', error)
-      throw error // Esto será capturado por el formulario
+      console.error('Error en operación tarea:', error)
+      throw error
     }
   }
 
   const handleCreateSuccess = () => {
     // Cerrar el modal después del éxito
     setIsModalOpen(false)
+    setEditingTask(null)
+    setIsEditMode(false)
     // Recargar las tareas si es necesario
     loadTasks()
+  }
+
+  const handleAddTaskClick = () => {
+    setEditingTask(null)
+    setIsEditMode(false)
+    setIsModalOpen(true)
   }
 
   return (
@@ -320,7 +340,7 @@ export function TasksPage() {
         </div>
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleAddTaskClick}
           disabled={isLoading}
         >
           {isLoading ? "Cargando..." : "Agregar Tarea"}
@@ -428,7 +448,7 @@ export function TasksPage() {
                     <Button
                       variant="outline"
                       className="mt-4"
-                      onClick={() => setIsModalOpen(true)}
+                      onClick={handleAddTaskClick}
                     >
                       Crear primera tarea
                     </Button>
@@ -549,13 +569,22 @@ export function TasksPage() {
       {/* Slide-in Modal */}
       <SlideModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Crear nueva tarea"
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingTask(null)
+          setIsEditMode(false)
+        }}
+        title={isEditMode ? "Editar tarea" : "Crear nueva tarea"}
       >
         <CreateTaskForm
           onSubmit={handleCreateTask}
-          onCancel={() => setIsModalOpen(false)}
+          onCancel={() => {
+            setIsModalOpen(false)
+            setEditingTask(null)
+            setIsEditMode(false)
+          }}
           onSuccess={handleCreateSuccess}
+          editingTask={editingTask}
         />
       </SlideModal>
     </div>

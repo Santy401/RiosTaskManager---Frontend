@@ -7,19 +7,16 @@ import { Input } from "@/app/ui/components/StyledComponents/input"
 import { Label } from "@/app/ui/components/StyledComponents/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Textarea } from "@/app/ui/components/StyledComponents/textarea"
-import { useCompany } from "@/app/presentation/hooks/Company/useCompany"
-import { useArea } from "@/app/presentation/hooks/Area/useArea"
-import { useUser } from "@/app/presentation/hooks/User/useUser"
 import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 
 interface CreateTaskFormProps {
   onSubmit: (data: any) => Promise<void> | void
   onCancel: () => void
   onSuccess?: () => void
-  initialData?: any // Para modo edición
+  editingTask?: any | null;
 }
 
-export function CreateTaskForm({ onSubmit, onCancel, onSuccess, initialData }: CreateTaskFormProps) {
+export function CreateTaskForm({ onSubmit, onCancel, onSuccess, editingTask }: CreateTaskFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -34,10 +31,6 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, initialData }: C
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
-
-  useCompany();
-  const { getAllAreas: getAllAreas, isLoading: areasLoading } = useArea();
-  const { getAllUsers, isLoading: usersLoading } = useUser();
 
   const [companies, setCompanies] = useState<any[]>([]);
   const [areas, setAreas] = useState<any[]>([]);
@@ -94,18 +87,18 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, initialData }: C
 
   // ✅ Cargar datos iniciales para edición
   useEffect(() => {
-    if (initialData) {
+    if (editingTask) {
       setFormData({
-        name: initialData.name || "",
-        description: initialData.description || "",
-        dueDate: initialData.dueDate ? new Date(initialData.dueDate).toISOString().split('T')[0] : "",
-        status: initialData.status || "pendiente",
-        companyId: initialData.companyId || initialData.company?.id || "",
-        areaId: initialData.areaId || initialData.area?.id || "",
-        userId: initialData.userId || initialData.user?.id || "",
+        name: editingTask.name || "",
+        description: editingTask.description || "",
+        dueDate: editingTask.dueDate ? new Date(editingTask.dueDate).toISOString().split('T')[0] : "",
+        status: editingTask.status || "pendiente",
+        companyId: editingTask.companyId || editingTask.company?.id || "",
+        areaId: editingTask.areaId || editingTask.area?.id || "",
+        userId: editingTask.userId || editingTask.user?.id || "",
       });
     }
-  }, [initialData]);
+  }, [editingTask]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -155,7 +148,7 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, initialData }: C
         ...formData,
         dueDate: new Date(formData.dueDate),
         // Para modo edición, incluir el ID
-        ...(initialData?.id && { id: initialData.id })
+        ...(editingTask?.id && { id: editingTask.id })
       }
 
       await onSubmit(submitData)
@@ -203,7 +196,7 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, initialData }: C
               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
               <div>
                 <p className="text-sm font-medium text-emerald-400">
-                  {initialData ? "Tarea actualizada exitosamente" : "Tarea creada exitosamente"}
+                  {editingTask ? "Tarea actualizada exitosamente" : "Tarea creada exitosamente"}
                 </p>
                 <p className="text-xs text-emerald-400/80">Redirigiendo...</p>
               </div>
@@ -218,7 +211,7 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, initialData }: C
               <XCircle className="h-5 w-5 text-red-400" />
               <div>
                 <p className="text-sm font-medium text-red-400">
-                  {initialData ? "Error al actualizar tarea" : "Error al crear tarea"}
+                  {editingTask ? "Error al actualizar tarea" : "Error al crear tarea"}
                 </p>
                 <p className="text-xs text-red-400/80">{error}</p>
               </div>
@@ -420,14 +413,14 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, initialData }: C
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                {initialData ? "Actualizando..." : "Creando..."}
+                {editingTask ? "Actualizando..." : "Creando..."}
               </>
             ) : success ? (
               <>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                {initialData ? "Actualizada" : "Creada"}
+                {editingTask ? "Actualizada" : "Creada"}
               </>
-            ) : initialData ? (
+            ) : editingTask ? (
               "Actualizar Tarea"
             ) : (
               "Crear Tarea"

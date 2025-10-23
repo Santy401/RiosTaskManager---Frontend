@@ -97,12 +97,53 @@ export async function PUT(
     }
 
     const taskId = params.id;
-    const body = await request.json();
 
+    if (!taskId) {
+      return NextResponse.json({ error: 'ID de Tarea requerido' }, { status: 400 });
+    }
+
+    const body = await request.json();
     const { name, description, dueDate, status, companyId, areaId, userId } = body;
 
     if (!name && !description && !dueDate && !status && !companyId && !areaId && !userId) {
       return NextResponse.json({ error: 'Al menos un campo debe ser actualizado' }, { status: 400 });
+    }
+
+    // Verificar que la tarea existe
+    const existingTask = await prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!existingTask) {
+      return NextResponse.json({ error: 'Tarea no encontrada' }, { status: 404 });
+    }
+
+    // Validar referencias si se proporcionan
+    if (companyId) {
+      const companyExists = await prisma.company.findUnique({
+        where: { id: companyId },
+      });
+      if (!companyExists) {
+        return NextResponse.json({ error: 'Compañía no encontrada' }, { status: 404 });
+      }
+    }
+
+    if (areaId) {
+      const areaExists = await prisma.area.findUnique({
+        where: { id: areaId },
+      });
+      if (!areaExists) {
+        return NextResponse.json({ error: 'Área no encontrada' }, { status: 404 });
+      }
+    }
+
+    if (userId) {
+      const userExists = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (!userExists) {
+        return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+      }
     }
 
     const updateData: any = {};
@@ -116,6 +157,8 @@ export async function PUT(
 
     const updatedTask = await updateTask(taskId, updateData);
 
+    console.log(`✅ Tarea ${taskId} actualizada por admin ${decoded.userId || decoded.id}`);
+
     return NextResponse.json({
       success: true,
       message: 'Tarea actualizada exitosamente',
@@ -123,10 +166,34 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('Error en PUT /api/admin/tasks/[id]:', error);
+    console.error('❌ Error en PUT /api/admin/tasks/[id]:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
+    if (error instanceof jwt.TokenExpiredError) {
+      return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
+    }
+
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint failed')) {
+        return NextResponse.json({
+          error: 'Ya existe una tarea con ese nombre'
+        }, { status: 409 });
+      }
+
+      if (error.message.includes('Foreign key constraint')) {
+        return NextResponse.json({
+          error: 'Error de referencia: compañía, área o usuario no válido'
+        }, { status: 409 });
+      }
+
+      if (error.message.includes('Record to update not found')) {
+        return NextResponse.json({
+          error: 'La tarea no existe o ya fue eliminada'
+        }, { status: 404 });
+      }
     }
 
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
