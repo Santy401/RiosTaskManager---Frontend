@@ -8,7 +8,7 @@ export const useAreaActions = () => {
         setError(null);
 
         try {
-            console.log('🔄 [HOOK] Creando areas...', data);
+            console.log('🔄 [HOOK] Creando área...', data);
 
             const response = await fetch('/api/admin/areas', {
                 method: 'POST',
@@ -23,7 +23,7 @@ export const useAreaActions = () => {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                let errorMessage = 'Error al crear area';
+                let errorMessage = 'Error al crear área';
 
                 try {
                     const errorData = JSON.parse(errorText);
@@ -36,7 +36,7 @@ export const useAreaActions = () => {
             }
 
             const newArea = await response.json();
-            console.log('✅ [HOOK] area creada:', newArea);
+            console.log('✅ [HOOK] Área creada:', newArea);
 
             return newArea;
 
@@ -49,6 +49,7 @@ export const useAreaActions = () => {
             setLoading(false);
         }
     };
+
 
     const deleteArea = async (areaId: string): Promise<any> => {
         setLoading(true);
@@ -83,6 +84,64 @@ export const useAreaActions = () => {
         }
     };
 
-    return { createArea, deleteArea }
+    const updateArea = async (params: { areaId: string; data: UpdateAreaData }): Promise<Area> => {
+        setLoading(true);
+        setError(null);
 
+        const { areaId, data } = params;
+
+        try {
+            console.log('🔄 [HOOK] Actualizando área...', { areaId, data });
+
+            const response = await fetch(`/api/admin/areas/${areaId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(data),
+            });
+
+            console.log('📥 [HOOK] Response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage = 'Error al actualizar área';
+
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.error || errorMessage;
+                } catch {
+                    errorMessage = errorText || `Error ${response.status}`;
+                }
+
+                throw new Error(errorMessage);
+            }
+
+            const updatedArea = await response.json();
+            console.log('✅ [HOOK] Área actualizada:', updatedArea);
+
+            return updatedArea;
+
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            console.error('💥 [HOOK] Error en updateArea:', err);
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const submitArea = async (data: CreateAreaData, editingArea?: Area | null): Promise<Area> => {
+        if (editingArea) {
+            return await updateArea({ areaId: editingArea.id, data });
+        } else {
+            return await createArea(data);
+        }
+    };
+
+    const clearError = () => setError(null);
+
+    return { createArea, deleteArea, updateArea, submitArea }
 }

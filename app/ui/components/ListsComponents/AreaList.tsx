@@ -21,7 +21,7 @@ interface Area {
   name: string;
   state: 'activo' | 'inactivo';
   createdAt: Date;
-  //   updatedAt: Date;
+  updatedAt: Date;
 }
 
 export function AreaList() {
@@ -31,9 +31,11 @@ export function AreaList() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [areas, setAreas] = useState<Area[]>([])
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [editingArea, setEditingArea] = useState<Area | null>(null)
+  const [isEditMode, setIsEditMode] = useState(false)
   const itemsPerPage = 10
 
-  const { getAllAreas, isLoading, createArea, deleteArea } = useArea();
+  const { getAllAreas, isLoading, createArea, deleteArea, updateArea } = useArea();
   const {
     contextMenu,
     handleDoubleClick,
@@ -68,18 +70,25 @@ export function AreaList() {
   // Verificar si hay áreas para mostrar
   const hasAreas = filteredAreas.length > 0
 
-  const handleMenuAction = async (action: string, userId: string, userName: string) => {
+  const handleMenuAction = async (action: string, areaId: string, areaName: string) => {
     try {
       switch (action) {
         case 'view':
-          console.log('👁️ Ver usuario:', userId)
+          console.log('👁️ Ver área:', areaId)
           break
         case 'edit':
-          console.log('✏️ Editar usuario:', userId)
+          console.log('✏️ Editar área:', areaId)
+          // Encuentra el área a editar
+          const areaToEdit = areas.find(area => area.id === areaId)
+          if (areaToEdit) {
+            setEditingArea(areaToEdit)
+            setIsEditMode(true)
+            setIsModalOpen(true)
+          }
           break
         case 'delete':
-          if (confirm(`¿Eliminar el Area "${userName}"?`)) {
-            await deleteArea(userId)
+          if (confirm(`¿Eliminar el Área "${areaName}"?`)) {
+            await deleteArea(areaId)
             await loadAreas()
           }
           break
@@ -93,10 +102,13 @@ export function AreaList() {
 
   const handleCreateArea = async (areaData: any) => {
     try {
-      // Crear el área usando el hook
-      await createArea(areaData)
-      // No necesitas llamar loadAreas aquí si tu hook actualiza el cache automáticamente
-      // Si no, puedes llamar loadAreas() para refrescar la lista
+      if (isEditMode && editingArea) {
+        // Modo edición - ahora pasas un objeto con areaId y data
+        await updateArea({ areaId: editingArea.id, data: areaData })
+      } else {
+        // Modo creación
+        await createArea(areaData)
+      }
     } catch (error) {
       console.error('Error creando área:', error)
       throw error // Esto será capturado por el formulario
@@ -146,7 +158,11 @@ export function AreaList() {
         </div>
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditingArea(null)
+            setIsEditMode(false)
+            setIsModalOpen(true)
+          }}
           disabled={isLoading}
         >
           {isLoading ? "Cargando..." : "Agregar Área"}
@@ -298,12 +314,25 @@ export function AreaList() {
       )}
 
       {/* Slide-in Modal */}
-      <SlideModal isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Crear nueva área">
-        <CreateAreaForm onSubmit={handleCreateArea}
-          onCancel={() => setIsModalOpen(false)}
-          onSuccess={handleCreateSuccess} />
+      <SlideModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingArea(null)
+          setIsEditMode(false)
+        }}
+        title={isEditMode ? "Editar área" : "Crear nueva área"}
+      >
+        <CreateAreaForm
+          onSubmit={handleCreateArea}
+          onCancel={() => {
+            setIsModalOpen(false)
+            setEditingArea(null)
+            setIsEditMode(false)
+          }}
+          onSuccess={handleCreateSuccess}
+          editingArea={editingArea} // ← Agrega esta prop
+        />
       </SlideModal>
     </div>
   )

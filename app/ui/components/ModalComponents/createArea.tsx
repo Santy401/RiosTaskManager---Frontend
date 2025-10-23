@@ -13,6 +13,7 @@ interface CreateAreaFormProps {
   onSubmit: (data: any) => Promise<void> | void
   onCancel: () => void
   onSuccess?: () => void
+  editingArea?: Area | null;
 }
 
 export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaFormProps) {
@@ -26,7 +27,7 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!formData.name.trim()) {
       setError("El nombre del área es obligatorio")
       return
@@ -39,17 +40,17 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
     try {
       // Ejecutar la función onSubmit (que debería ser async)
       await onSubmit(formData)
-      
+
       // Mostrar estado de éxito
       setSuccess(true)
-      
+
       // Esperar un momento para mostrar el éxito y luego cerrar
       setTimeout(() => {
         if (onSuccess) {
           onSuccess()
         }
       }, 1000)
-      
+
     } catch (err: any) {
       console.error('Error creando área:', err)
       setError(err.message || "Error al crear el área. Por favor, intenta nuevamente.")
@@ -114,8 +115,8 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
           <Label htmlFor="estado" className="text-sm font-medium text-foreground">
             Estado del Área
           </Label>
-          <Select 
-            value={formData.state} 
+          <Select
+            value={formData.state}
             onValueChange={(value: "activo" | "inactivo") => handleInputChange("state", value)}
             disabled={isLoading || success}
           >
@@ -149,17 +150,17 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
           * Campos obligatorios
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            type="button" 
-            variant="ghost" 
-            onClick={onCancel} 
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onCancel}
             className="hover:bg-secondary"
             disabled={isLoading}
           >
             {isLoading ? "Cancelando..." : "Cancelar"}
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-24"
             disabled={!formData.name.trim() || isLoading || success}
           >

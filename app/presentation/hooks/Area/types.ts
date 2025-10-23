@@ -6,7 +6,7 @@ export interface AreaState {
 export interface AreaActions {
     getAllAreas: () => Promise<Area[]>;
     createArea: (data: CreateAreaData) => Promise<Area>;
-    deleteArea: (companyId: string) => Promise<any>;
+    updateArea?: ((params: { areaId: string; data: UpdateAreaData }) => Promise<Area>) | undefined
+    deleteArea: (areaId: string) => Promise<any>; // También cambia companyId por areaId
 }
-
 export type UseAreaResult = AreaState & AreaActions

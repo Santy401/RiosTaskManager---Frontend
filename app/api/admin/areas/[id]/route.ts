@@ -76,3 +76,106 @@ export async function DELETE(
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const cookies = request.headers.get('cookie');
+    const token = cookies?.match(/token=([^;]+)/)?.[1];
+    const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];
+    const activeToken = token || authToken;
+
+    if (!activeToken) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+
+    if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
+      return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
+    }
+
+    const areaId = params.id;
+
+    if (!areaId) {
+      return NextResponse.json({ error: 'ID de área requerido' }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { name, description, companyId, status } = body;
+
+    if (!name || name.trim() === '') {
+      return NextResponse.json({ error: 'El nombre del área es requerido' }, { status: 400 });
+    }
+
+    const existingArea = await prisma.area.findUnique({
+      where: { id: areaId },
+    });
+
+    if (!existingArea) {
+      return NextResponse.json({ error: 'Área no encontrada' }, { status: 404 });
+    }
+
+    if (companyId) {
+      const companyExists = await prisma.company.findUnique({
+        where: { id: companyId },
+      });
+
+      if (!companyExists) {
+        return NextResponse.json({ error: 'Compañía no encontrada' }, { status: 404 });
+      }
+    }
+
+    const updatedArea = await prisma.area.update({
+      where: { id: areaId },
+      data: {
+        name: name.trim(),
+        state: status !== undefined ? status : existingArea.state,
+        updatedAt: new Date(),
+      },
+    });
+
+    console.log(`✅ Área ${areaId} actualizada por admin ${decoded.userId || decoded.id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Área actualizada exitosamente',
+      area: updatedArea
+    });
+
+  } catch (error) {
+    console.error('❌ Error en PUT /api/admin/area/[id]:', error);
+
+    if (error instanceof jwt.JsonWebTokenError) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
+    if (error instanceof jwt.TokenExpiredError) {
+      return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
+    }
+
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint failed')) {
+        return NextResponse.json({
+          error: 'Ya existe un área con ese nombre'
+        }, { status: 409 });
+      }
+
+      if (error.message.includes('Foreign key constraint')) {
+        return NextResponse.json({
+          error: 'Error de referencia: compañía no válida'
+        }, { status: 409 });
+      }
+
+      if (error.message.includes('Record to update not found')) {
+        return NextResponse.json({
+          error: 'El área no existe o ya fue eliminada'
+        }, { status: 404 });
+      }
+    }
+
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}

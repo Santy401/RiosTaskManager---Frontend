@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import jwt from 'jsonwebtoken'
-import { getAllArea, createArea } from "@/lib/area";
+import { getAllArea } from "@/lib/area";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request) {
   try {
@@ -38,63 +39,54 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
-    const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];
-    const activeToken = token || authToken;
 
-    if (!activeToken) {
+    if (!token) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
 
     if (decoded.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
     }
 
+    const areaId = params.id;
     const body = await request.json();
+
     const { name, state } = body;
 
-    if (!name || !state) {
-      return NextResponse.json({ error: 'Nombre es requerido' }, { status: 400 });
+    if (!name && state === undefined) {
+      return NextResponse.json({ error: 'Al menos un campo debe ser actualizado' }, { status: 400 });
     }
 
-    // const existingCompany = await checkIfCompanyExists(nit, email);
-    // if (existingCompany) {
-    //   return NextResponse.json({ error: 'Ya existe una empresa con este NIT o email' }, { status: 409 });
-    // }
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (state !== undefined) updateData.state = state;
+    updateData.updatedAt = new Date();
 
-    const newArea = await createArea({
-      name,
-      state,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    const updatedArea = await prisma.area.update({
+      where: { id: areaId },
+      data: updateData
     });
-
-    console.log('✅ area creada exitosamente:', newArea.id);
 
     return NextResponse.json({
       success: true,
-      message: 'area creada exitosamente',
-      area: newArea
-    }, { status: 201 });
+      message: 'Área actualizada exitosamente',
+      area: updatedArea
+    });
 
   } catch (error) {
-    console.error('Error en POST /api/admin/areas:', error);
+    console.error('Error en PUT /api/admin/areas/[id]:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
-    }
-
-    if (error instanceof jwt.TokenExpiredError) {
-      return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
-    }
-
-    if (error instanceof Error && error.message.includes('unique constraint')) {
-      return NextResponse.json({ error: 'Ya existe una area con este Nombre' }, { status: 409 });
     }
 
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
