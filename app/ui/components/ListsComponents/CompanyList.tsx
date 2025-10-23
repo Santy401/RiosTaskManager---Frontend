@@ -43,11 +43,13 @@ export function CompanyList() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [companies, setCompanies] = useState<Company[]>([])
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [showPasswords, setShowPasswords] = useState<{[key: string]: boolean}>({})
+  const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({})
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null)
+  const [isEditMode, setIsEditMode] = useState(false)
   const [showAllPasswords, setShowAllPasswords] = useState(false)
   const itemsPerPage = 10
 
-  const { getAllCompany, isLoading, createCompany, deleteCompany } = useCompany();
+  const { getAllCompany, isLoading, createCompany, deleteCompany, updateCompany } = useCompany();
   const {
     contextMenu,
     handleDoubleClick,
@@ -78,7 +80,7 @@ export function CompanyList() {
     if (showAllPasswords) {
       return
     }
-    
+
     setShowPasswords(prev => ({
       ...prev,
       [companyId]: !prev[companyId]
@@ -126,7 +128,7 @@ export function CompanyList() {
 
     if (newShowAllState) {
       setShowPasswords(prev => {
-        const newState: {[key: string]: boolean} = {}
+        const newState: { [key: string]: boolean } = {}
         companies.forEach(company => {
           newState[company.id] = true
         })
@@ -134,7 +136,7 @@ export function CompanyList() {
       })
     } else {
       setShowPasswords(prev => {
-        const newState: {[key: string]: boolean} = {}
+        const newState: { [key: string]: boolean } = {}
         companies.forEach(company => {
           newState[company.id] = false
         })
@@ -143,18 +145,25 @@ export function CompanyList() {
     }
   }
 
-  const handleMenuAction = async (action: string, userId: string, userName: string) => {
+  const handleMenuAction = async (action: string, companyId: string, companyName: string) => {
     try {
       switch (action) {
         case 'view':
-          console.log('👁️ Ver usuario:', userId)
+          console.log('👁️ Ver empresa:', companyId)
           break
         case 'edit':
-          console.log('✏️ Editar usuario:', userId)
+          console.log('✏️ Editar empresa:', companyId)
+          // Encuentra la empresa a editar
+          const companyToEdit = companies.find(company => company.id === companyId)
+          if (companyToEdit) {
+            setEditingCompany(companyToEdit)
+            setIsEditMode(true)
+            setIsModalOpen(true)
+          }
           break
         case 'delete':
-          if (confirm(`¿Eliminar Empresa "${userName}"?`)) {
-            await deleteCompany(userId)
+          if (confirm(`¿Eliminar Empresa "${companyName}"?`)) {
+            await deleteCompany(companyId)
             await loadCompanies()
           }
           break
@@ -168,15 +177,23 @@ export function CompanyList() {
 
   const handleCreateCompany = async (companyData: any) => {
     try {
-      await createCompany(companyData)
+      if (isEditMode && editingCompany) {
+        // Modo edición
+        await updateCompany({ companyId: editingCompany.id, data: companyData })
+      } else {
+        // Modo creación
+        await createCompany(companyData)
+      }
     } catch (error) {
-      console.error('Error creando empresa:', error)
+      console.error('Error en operación empresa:', error)
       throw error
     }
   }
 
   const handleCreateSuccess = () => {
     setIsModalOpen(false)
+    setEditingCompany(null)
+    setIsEditMode(false)
     loadCompanies()
   }
 
@@ -239,7 +256,14 @@ export function CompanyList() {
             </Button>
           </div>
         </div>
-        <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setIsModalOpen(true)}>
+        <Button
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
+          onClick={() => {
+            setEditingCompany(null)
+            setIsEditMode(false)
+            setIsModalOpen(true)
+          }}
+        >
           Agregar Empresa
         </Button>
       </div>
@@ -308,7 +332,7 @@ export function CompanyList() {
                     {/* CLAVE DIAN */}
                     <TableCell>
                       <Badge variant={getDianStatus(company.dian)}
-                             className={getDianBadgeClass(company.dian)}>
+                        className={getDianBadgeClass(company.dian)}>
                         {getDisplayValue(company.dian)}
                       </Badge>
                     </TableCell>
@@ -348,8 +372,8 @@ export function CompanyList() {
                           onClick={() => togglePasswordVisibility(company.id)}
                           disabled={showAllPasswords}
                         >
-                          {showAllPasswords || showPasswords[company.id] ? 
-                            <EyeOff className="h-3 w-3" /> : 
+                          {showAllPasswords || showPasswords[company.id] ?
+                            <EyeOff className="h-3 w-3" /> :
                             <Eye className="h-3 w-3" />
                           }
                         </Button>
@@ -375,7 +399,7 @@ export function CompanyList() {
                     <TableCell className="text-muted-foreground text-sm">
                       {formatDate(company.createdAt)}
                     </TableCell>
-                    
+
                     <TableCell className="text-muted-foreground text-sm">
                       {formatDate(company.updatedAt)}
                     </TableCell>
@@ -434,7 +458,7 @@ export function CompanyList() {
             >
               <ChevronLeft className="h-4 w-4 text-white" />
             </Button>
-            
+
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               const pageNum = i + 1
               return (
@@ -449,7 +473,7 @@ export function CompanyList() {
                 </Button>
               )
             })}
-            
+
             {totalPages > 5 && (
               <>
                 <span className="px-2 text-muted-foreground">...</span>
@@ -463,7 +487,7 @@ export function CompanyList() {
                 </Button>
               </>
             )}
-            
+
             <Button
               variant="ghost"
               size="icon"
@@ -480,13 +504,22 @@ export function CompanyList() {
       {/* Slide-in Modal */}
       <SlideModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Crear nueva empresa"
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingCompany(null)
+          setIsEditMode(false)
+        }}
+        title={isEditMode ? "Editar empresa" : "Crear nueva empresa"}
       >
         <CreateCompanyForm
           onSubmit={handleCreateCompany}
-          onCancel={() => setIsModalOpen(false)}
+          onCancel={() => {
+            setIsModalOpen(false)
+            setEditingCompany(null)
+            setIsEditMode(false)
+          }}
           onSuccess={handleCreateSuccess}
+          editingCompany={editingCompany} // ← Agrega esta prop
         />
       </SlideModal>
     </div>

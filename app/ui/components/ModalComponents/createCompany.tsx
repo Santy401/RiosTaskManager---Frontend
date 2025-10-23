@@ -2,21 +2,23 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
 import { Label } from "@/app/ui/components/StyledComponents/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Loader2, CheckCircle2, XCircle } from "lucide-react"
+import { Company } from "@prisma/client"
 
 interface CreateCompanyFormProps {
   onSubmit: (data: any) => Promise<void> | void
   onCancel: () => void
   onSuccess?: () => void
+  editingCompany?: Company | null; 
 }
 
-export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompanyFormProps) {
+export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompany }: CreateCompanyFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     tipo: "A",
@@ -37,6 +39,48 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompa
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  // Cargar datos cuando hay empresa a editar
+  useEffect(() => {
+    if (editingCompany) {
+      setFormData({
+        name: editingCompany.name || "",
+        tipo: editingCompany.tipo || "A",
+        nit: editingCompany.nit || "",
+        cedula: editingCompany.cedula || "",
+        dian: editingCompany.dian || "Activa",
+        firma: editingCompany.firma || "Digital",
+        softwareContable: editingCompany.softwareContable || "",
+        usuario: editingCompany.usuario || "",
+        contraseña: editingCompany.contraseña || "",
+        servidorCorreo: editingCompany.servidorCorreo || "",
+        email: editingCompany.email || "",
+        claveCorreo: editingCompany.claveCorreo || "",
+        claveCC: editingCompany.claveCC || "",
+        claveSS: editingCompany.claveSS || "",
+        claveICA: editingCompany.claveICA || "",
+      })
+    } else {
+      // Resetear formulario si no hay empresa a editar
+      setFormData({
+        name: "",
+        tipo: "A",
+        nit: "",
+        cedula: "",
+        dian: "Activa",
+        firma: "Digital",
+        softwareContable: "",
+        usuario: "",
+        contraseña: "",
+        servidorCorreo: "",
+        email: "",
+        claveCorreo: "",
+        claveCC: "",
+        claveSS: "",
+        claveICA: "",
+      })
+    }
+  }, [editingCompany])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,8 +141,8 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompa
       }, 1500)
 
     } catch (err: any) {
-      console.error('Error creando empresa:', err)
-      setError(err.message || "Error al crear la empresa. Por favor, intenta nuevamente.")
+      console.error('Error en operación empresa:', err)
+      setError(err.message || `Error al ${editingCompany ? 'actualizar' : 'crear'} la empresa. Por favor, intenta nuevamente.`)
     } finally {
       setIsLoading(false)
     }
@@ -127,7 +171,9 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompa
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-400" />
               <div>
-                <p className="text-sm font-medium text-emerald-400">Empresa creada exitosamente</p>
+                <p className="text-sm font-medium text-emerald-400">
+                  {editingCompany ? 'Empresa actualizada exitosamente' : 'Empresa creada exitosamente'}
+                </p>
                 <p className="text-xs text-emerald-400/80">Redirigiendo...</p>
               </div>
             </div>
@@ -140,7 +186,9 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompa
             <div className="flex items-center gap-3">
               <XCircle className="h-5 w-5 text-red-400" />
               <div>
-                <p className="text-sm font-medium text-red-400">Error al crear empresa</p>
+                <p className="text-sm font-medium text-red-400">
+                  {editingCompany ? 'Error al actualizar empresa' : 'Error al crear empresa'}
+                </p>
                 <p className="text-xs text-red-400/80">{error}</p>
               </div>
             </div>
@@ -287,6 +335,21 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompa
           </Select>
         </div>
 
+        {/* Firma Field */}
+        <div className="space-y-2">
+          <Label htmlFor="firma" className="text-sm font-medium text-foreground">
+            Firma Electrónica
+          </Label>
+          <Input
+            id="firma"
+            placeholder="Tipo de firma electrónica"
+            value={formData.firma}
+            onChange={(e) => handleInputChange("firma", e.target.value)}
+            className="bg-secondary/50 border-border text-white"
+            disabled={isLoading || success}
+          />
+        </div>
+
         {/* Cedula Field */}
         <div className="space-y-2">
           <Label htmlFor="cedula" className="text-sm font-medium text-foreground">
@@ -407,15 +470,15 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess }: CreateCompa
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Creando...
+                {editingCompany ? 'Actualizando...' : 'Creando...'}
               </>
             ) : success ? (
               <>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                Creada
+                {editingCompany ? 'Actualizada' : 'Creada'}
               </>
             ) : (
-              "Crear Empresa"
+              editingCompany ? 'Actualizar Empresa' : 'Crear Empresa'
             )}
           </Button>
         </div>

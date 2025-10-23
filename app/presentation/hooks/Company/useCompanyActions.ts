@@ -84,5 +84,62 @@ export const useCompanyActions = () => {
         }
     };
 
-    return { createCompany, deleteCompany };
+    const updateCompany = async (params: { companyId: string; data: Partial<CreateCompanyData> }): Promise<Company> => {
+        setLoading(true);
+        setError(null);
+
+        const { companyId, data } = params;
+
+        try {
+            console.log('🔄 [HOOK] Actualizando empresa...', { companyId, data });
+
+            const response = await fetch(`/api/admin/companies/${companyId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify(data),
+            });
+
+            console.log('📥 [HOOK] Response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage = 'Error al actualizar empresa';
+
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.error || errorMessage;
+                } catch {
+                    errorMessage = errorText || `Error ${response.status}`;
+                }
+
+                throw new Error(errorMessage);
+            }
+
+            const updatedCompany = await response.json();
+            console.log('✅ [HOOK] Empresa actualizada:', updatedCompany);
+
+            return updatedCompany;
+
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            console.error('💥 [HOOK] Error en updateCompany:', err);
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const submitCompany = async (data: CreateCompanyData, editingCompany?: Company | null): Promise<Company> => {
+        if (editingCompany) {
+            return await updateCompany({ companyId: editingCompany.id, data });
+        } else {
+            return await createCompany(data);
+        }
+    };
+
+    return { createCompany, deleteCompany, updateCompany, submitCompany };
 }

@@ -82,3 +82,106 @@ export async function DELETE(
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const cookies = request.headers.get('cookie');
+    const token = cookies?.match(/token=([^;]+)/)?.[1];
+    const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];
+    const activeToken = token || authToken;
+
+    if (!activeToken) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+
+    if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
+      return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
+    }
+
+    const companyId = params.id;
+
+    if (!companyId) {
+      return NextResponse.json({ error: 'ID de empresa requerido' }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { name, email, phone, address, nit, state } = body;
+
+    // Validar que al menos un campo sea proporcionado para actualizar
+    if (!name && !email && !phone && !address && !nit && state === undefined) {
+      return NextResponse.json({
+        error: 'Al menos un campo debe ser actualizado'
+      }, { status: 400 });
+    }
+
+    const existingCompany = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!existingCompany) {
+      return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });
+    }
+
+    // Prevenir edición de empresa principal del sistema
+    if (existingCompany.tipo === 'Sistema' || existingCompany.name === 'Empresa Principal') {
+      return NextResponse.json({
+        error: 'No se puede modificar la empresa principal del sistema'
+      }, { status: 403 });
+    }
+
+    // Construir datos de actualización dinámicamente
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (address) updateData.address = address;
+    if (nit) updateData.nit = nit;
+    if (state !== undefined) updateData.state = state;
+    updateData.updatedAt = new Date();
+
+    const updatedCompany = await prisma.company.update({
+      where: { id: companyId },
+      data: updateData,
+    });
+
+    console.log(`✅ Empresa ${companyId} actualizada por admin ${decoded.userId || decoded.id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Empresa actualizada exitosamente',
+      company: updatedCompany
+    });
+
+  } catch (error) {
+    console.error('❌ Error en PUT /api/admin/companies/[id]:', error);
+
+    if (error instanceof jwt.JsonWebTokenError) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
+    if (error instanceof jwt.TokenExpiredError) {
+      return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
+    }
+
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint failed')) {
+        return NextResponse.json({
+          error: 'Ya existe una empresa con ese NIT o email'
+        }, { status: 409 });
+      }
+
+      if (error.message.includes('Record to update not found')) {
+        return NextResponse.json({
+          error: 'La empresa no existe o ya fue eliminada'
+        }, { status: 404 });
+      }
+    }
+
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
