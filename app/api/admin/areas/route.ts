@@ -39,10 +39,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -57,36 +54,62 @@ export async function PUT(
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
     }
 
-    const areaId = params.id;
     const body = await request.json();
-
     const { name, state } = body;
 
-    if (!name && state === undefined) {
-      return NextResponse.json({ error: 'Al menos un campo debe ser actualizado' }, { status: 400 });
+    if (!name || name.trim() === '') {
+      return NextResponse.json({ error: 'El nombre del área es requerido' }, { status: 400 });
     }
 
-    const updateData: any = {};
-    if (name) updateData.name = name;
-    if (state !== undefined) updateData.state = state;
-    updateData.updatedAt = new Date();
-
-    const updatedArea = await prisma.area.update({
-      where: { id: areaId },
-      data: updateData
+    const existingArea = await prisma.area.findFirst({
+      where: {
+        name: {
+          equals: name.trim(),
+          mode: 'insensitive'
+        }
+      }
     });
+
+    if (existingArea) {
+      return NextResponse.json({
+        error: 'Ya existe un área con ese nombre'
+      }, { status: 409 });
+    }
+
+    const newArea = await prisma.area.create({
+      data: {
+        name: name.trim(),
+        state: state !== undefined ? state : true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+
+    console.log(`✅ Área creada por admin ${decoded.userId || decoded.id}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Área actualizada exitosamente',
-      area: updatedArea
-    });
+      message: 'Área creada exitosamente',
+      area: newArea
+    }, { status: 201 });
 
   } catch (error) {
-    console.error('Error en PUT /api/admin/areas/[id]:', error);
+    console.error('❌ Error en POST /api/admin/areas:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
+    if (error instanceof jwt.TokenExpiredError) {
+      return NextResponse.json({ error: 'Token expirado' }, { status: 401 });
+    }
+
+    if (error instanceof Error) {
+      if (error.message.includes('Unique constraint failed')) {
+        return NextResponse.json({
+          error: 'Ya existe un área con ese nombre'
+        }, { status: 409 });
+      }
     }
 
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
