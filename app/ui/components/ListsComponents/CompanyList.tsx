@@ -8,7 +8,7 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Building2, EllipsisVertical, Eye, EyeOff } from "lucide-react"
+import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Building2, EllipsisVertical, Eye, EyeOff, Loader2, Trash2 } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateCompanyForm } from "../../components/ModalComponents/createCompany"
 import { useCompany } from "@/app/presentation/hooks/Company/useCompany"
@@ -49,7 +49,7 @@ export function CompanyList() {
   const [showAllPasswords, setShowAllPasswords] = useState(false)
   const itemsPerPage = 10
 
-  const { getAllCompany, isLoading, createCompany, deleteCompany, updateCompany } = useCompany();
+  const { getAllCompany, isLoading, createCompany, deleteCompany, updateCompany, isDeletingCompany } = useCompany();
   const {
     contextMenu,
     handleDoubleClick,
@@ -296,115 +296,165 @@ export function CompanyList() {
             </TableHeader>
             <TableBody>
               {hasCompanies ? (
-                paginatedCompanies.map((company) => (
-                  <TableRow key={company.id} className="border-border hover:bg-secondary/30"
-                    onContextMenu={(e) => handleContextMenu(e, company.id, company.name)}
-                    onDoubleClick={(e) => handleDoubleClick(e, company.id, company.name)}
-                    onClick={(e) => handleDoubleTap(e, company.id, company.name)}
-                    onTouchStart={(e) => handleDoubleTap(e, company.id, company.name)}
-                  >
-                    {/* Logo */}
-                    <TableCell>
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={undefined} />
-                        <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                          <Building2 className="h-4 w-4" />
-                        </AvatarFallback>
-                      </Avatar>
-                    </TableCell>
+                paginatedCompanies.map((company) => {
+                  const isDeleting = isDeletingCompany(company.id);
 
-                    {/* NOMBRE */}
-                    <TableCell className="font-medium text-foreground">{getDisplayValue(company.name)}</TableCell>
+                  return (
+                    <TableRow
+                      key={company.id}
+                      className={`border-border hover:bg-secondary/30 ${isDeleting ? 'opacity-50 pointer-events-none' : ''
+                        }`}
+                      onContextMenu={(e) => !isDeleting && handleContextMenu(e, company.id, company.name)}
+                      onDoubleClick={(e) => !isDeleting && handleDoubleClick(e, company.id, company.name)}
+                      onClick={(e) => !isDeleting && handleDoubleTap(e, company.id, company.name)}
+                      onTouchStart={(e) => !isDeleting && handleDoubleTap(e, company.id, company.name)}
+                    >
+                      {/* Logo con loader */}
+                      <TableCell>
+                        {isDeleting ? (
+                          <div className="flex items-center justify-center">
+                            <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                          </div>
+                        ) : (
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={undefined} />
+                            <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                              <Building2 className="h-4 w-4" />
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </TableCell>
 
-                    {/* TIPO */}
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {getDisplayValue(company.tipo)}
-                      </Badge>
-                    </TableCell>
+                      {/* NOMBRE con estado de eliminación */}
+                      <TableCell className="font-medium">
+                        {isDeleting ? (
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                            <span className="text-muted-foreground">Eliminando...</span>
+                          </div>
+                        ) : (
+                          <span className="text-foreground">{getDisplayValue(company.name)}</span>
+                        )}
+                      </TableCell>
 
-                    {/* NIT */}
-                    <TableCell className="text-muted-foreground">{getDisplayValue(company.nit)}</TableCell>
+                      {/* TIPO */}
+                      <TableCell>
+                        {isDeleting ? (
+                          <div className="h-6 flex items-center">
+                            <span className="text-xs text-muted-foreground">-</span>
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            {getDisplayValue(company.tipo)}
+                          </Badge>
+                        )}
+                      </TableCell>
 
-                    {/* CÉDULA */}
-                    <TableCell className="text-muted-foreground">{getDisplayValue(company.cedula)}</TableCell>
+                      {/* NIT */}
+                      <TableCell className="text-muted-foreground">
+                        {isDeleting ? '-' : getDisplayValue(company.nit)}
+                      </TableCell>
 
-                    {/* CLAVE DIAN */}
-                    <TableCell>
-                      <Badge variant={getDianStatus(company.dian)}
-                        className={getDianBadgeClass(company.dian)}>
-                        {getDisplayValue(company.dian)}
-                      </Badge>
-                    </TableCell>
+                      {/* CÉDULA */}
+                      <TableCell className="text-muted-foreground">
+                        {isDeleting ? '-' : getDisplayValue(company.cedula)}
+                      </TableCell>
 
-                    {/* FIRMA ELEC. */}
-                    <TableCell className="text-muted-foreground">{getDisplayValue(company.firma)}</TableCell>
+                      {/* CLAVE DIAN */}
+                      <TableCell>
+                        {isDeleting ? (
+                          <div className="h-6 flex items-center">
+                            <span className="text-xs text-muted-foreground">-</span>
+                          </div>
+                        ) : (
+                          <Badge variant={getDianStatus(company.dian)}
+                            className={getDianBadgeClass(company.dian)}>
+                            {getDisplayValue(company.dian)}
+                          </Badge>
+                        )}
+                      </TableCell>
 
-                    {/* SOFTWARE CONTABLE */}
-                    <TableCell className="text-muted-foreground">
-                      {getDisplayValue(company.softwareContable)}
-                    </TableCell>
+                      {/* FIRMA ELEC. */}
+                      <TableCell className="text-muted-foreground">
+                        {isDeleting ? '-' : getDisplayValue(company.firma)}
+                      </TableCell>
 
-                    {/* USUARIO */}
-                    <TableCell className="text-muted-foreground">{getDisplayValue(company.usuario)}</TableCell>
+                      {/* SOFTWARE CONTABLE */}
+                      <TableCell className="text-muted-foreground">
+                        {isDeleting ? '-' : getDisplayValue(company.softwareContable)}
+                      </TableCell>
 
-                    {/* CLAVE SOFTWARE */}
-                    <TableCell className="text-muted-foreground font-mono text-sm">
-                      {maskPassword(company.contraseña, showPasswords[company.id])}
-                    </TableCell>
+                      {/* USUARIO */}
+                      <TableCell className="text-muted-foreground">
+                        {isDeleting ? '-' : getDisplayValue(company.usuario)}
+                      </TableCell>
 
-                    {/* SERVIDOR CORREO */}
-                    <TableCell className="text-muted-foreground">{getDisplayValue(company.servidorCorreo)}</TableCell>
+                      {/* CLAVE SOFTWARE */}
+                      <TableCell className="text-muted-foreground font-mono text-sm">
+                        {isDeleting ? '••••••••' : maskPassword(company.contraseña, showPasswords[company.id])}
+                      </TableCell>
 
-                    {/* E-MAIL */}
-                    <TableCell className="text-muted-foreground">{getDisplayValue(company.email)}</TableCell>
+                      {/* SERVIDOR CORREO */}
+                      <TableCell className="text-muted-foreground">
+                        {isDeleting ? '-' : getDisplayValue(company.servidorCorreo)}
+                      </TableCell>
 
-                    {/* CLAVE CORREO */}
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <span className="text-muted-foreground font-mono text-sm">
-                          {maskPassword(company.claveCorreo, showPasswords[company.id])}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 hover:bg-transparent"
-                          onClick={() => togglePasswordVisibility(company.id)}
-                          disabled={showAllPasswords}
-                        >
-                          {showAllPasswords || showPasswords[company.id] ?
-                            <EyeOff className="h-3 w-3" /> :
-                            <Eye className="h-3 w-3" />
-                          }
-                        </Button>
-                      </div>
-                    </TableCell>
+                      {/* E-MAIL */}
+                      <TableCell className="text-muted-foreground">
+                        {isDeleting ? '-' : getDisplayValue(company.email)}
+                      </TableCell>
 
-                    {/* CLAVE CC */}
-                    <TableCell className="text-muted-foreground font-mono text-sm">
-                      {maskPassword(company.claveCC, showPasswords[company.id])}
-                    </TableCell>
+                      {/* CLAVE CORREO */}
+                      <TableCell>
+                        {isDeleting ? (
+                          <span className="text-muted-foreground font-mono text-sm">••••••••</span>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <span className="text-muted-foreground font-mono text-sm">
+                              {maskPassword(company.claveCorreo, showPasswords[company.id])}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 hover:bg-transparent"
+                              onClick={() => togglePasswordVisibility(company.id)}
+                              disabled={showAllPasswords}
+                            >
+                              {showAllPasswords || showPasswords[company.id] ?
+                                <EyeOff className="h-3 w-3" /> :
+                                <Eye className="h-3 w-3" />
+                              }
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
 
-                    {/* CLAVE SS */}
-                    <TableCell className="text-muted-foreground font-mono text-sm">
-                      {maskPassword(company.claveSS, showPasswords[company.id])}
-                    </TableCell>
+                      {/* CLAVE CC */}
+                      <TableCell className="text-muted-foreground font-mono text-sm">
+                        {isDeleting ? '••••••••' : maskPassword(company.claveCC, showPasswords[company.id])}
+                      </TableCell>
 
-                    {/* CLAVE ICA */}
-                    <TableCell className="text-muted-foreground font-mono text-sm">
-                      {maskPassword(company.claveICA, showPasswords[company.id])}
-                    </TableCell>
+                      {/* CLAVE SS */}
+                      <TableCell className="text-muted-foreground font-mono text-sm">
+                        {isDeleting ? '••••••••' : maskPassword(company.claveSS, showPasswords[company.id])}
+                      </TableCell>
 
-                    {/* Fechas */}
-                    <TableCell className="text-muted-foreground text-sm">
-                      {formatDate(company.createdAt)}
-                    </TableCell>
+                      {/* CLAVE ICA */}
+                      <TableCell className="text-muted-foreground font-mono text-sm">
+                        {isDeleting ? '••••••••' : maskPassword(company.claveICA, showPasswords[company.id])}
+                      </TableCell>
 
-                    <TableCell className="text-muted-foreground text-sm">
-                      {formatDate(company.updatedAt)}
-                    </TableCell>
-                  </TableRow>
-                ))
+                      {/* Fechas */}
+                      <TableCell className="text-muted-foreground text-sm">
+                        {isDeleting ? '-' : formatDate(company.createdAt)}
+                      </TableCell>
+
+                      <TableCell className="text-muted-foreground text-sm">
+                        {isDeleting ? '-' : formatDate(company.updatedAt)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={18} className="text-center py-8">
@@ -436,6 +486,7 @@ export function CompanyList() {
           onAction={handleMenuAction}
           onClose={closeContextMenu}
           menuRef={contextMenuRef}
+          isDeleting={isDeletingCompany}
         />
       </div>
 

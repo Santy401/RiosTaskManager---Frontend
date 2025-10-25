@@ -10,6 +10,7 @@ export interface CompanyActions {
     createCompany: (data: CreateCompanyData) => Promise<Company>;
     deleteCompany: (companyId: string) => Promise<any>;
     updateCompany: (params: { companyId: string; data: Partial<CreateCompanyData> }) => Promise<Company>;
+    isDeletingCompany: (companyId: string) => boolean;
 }
 
 export type UseCompanyResult = CompanyState & CompanyActions;

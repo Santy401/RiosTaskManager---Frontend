@@ -4,6 +4,7 @@ export interface UseTaskResult {
     createTask: (data: CreateTaskData) => Promise<Task>;
     updateTask: (params: { taskId: string; data: UpdateTaskData }) => Promise<Task>;
     deleteTask: (taskId: string) => Promise<any>;
+    isDeletingTask: (taskId: string) => boolean;
     isLoading: boolean;
     error: string | null;
 }

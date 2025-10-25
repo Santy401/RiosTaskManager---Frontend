@@ -21,6 +21,7 @@ interface UseAreaResult {
     createArea: (data: CreateAreaData) => Promise<Area>;
     updateArea: (params: { areaId: string; data: UpdateAreaData }) => Promise<Area>; // ← Quita el ?
     deleteArea: (areaId: string) => Promise<any>;
+    isDeletingArea: (areaId: string) => boolean;
     isLoading: boolean;
     error: string | null;
 }

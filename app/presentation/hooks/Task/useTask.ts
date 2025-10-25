@@ -5,7 +5,7 @@ import { UseTaskResult } from "./type";
 
 export const useTask = (): UseTaskResult => {
   const { getAllTasks, getTaskById } = useTaskQuieries();
-  const { createTask, updateTask, deleteTask } = useTaskActions();
+  const { createTask, updateTask, deleteTask, isDeletingTask } = useTaskActions();
   const { isLoading, error } = useTaskBase();
 
   return {
@@ -15,6 +15,7 @@ export const useTask = (): UseTaskResult => {
     updateTask,
     deleteTask,
     isLoading,
+    isDeletingTask,
     error
   };
 }

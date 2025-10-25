@@ -1,4 +1,4 @@
-import { Edit, Trash2, Eye } from "lucide-react"
+import { Edit, Trash2, Eye, Loader2 } from "lucide-react";
 import { RefObject } from "react";
 
 interface ContextMenuProps {
@@ -11,6 +11,7 @@ interface ContextMenuProps {
   onClose: () => void;
   menuRef: RefObject<HTMLDivElement | null>; 
   customActions?: { label: string; icon: React.ReactNode; action: string }[];
+  isDeleting?: (itemId: string) => boolean;
 }
 
 export function ContextMenu({ 
@@ -21,8 +22,9 @@ export function ContextMenu({
   itemName, 
   onAction, 
   onClose,
-  customActions ,
-  menuRef
+  customActions,
+  menuRef,
+  isDeleting
 }: ContextMenuProps) {
   if (!visible || !itemId) return null
 
@@ -33,6 +35,14 @@ export function ContextMenu({
   ]
 
   const actions = customActions || defaultActions
+
+  const handleAction = async (action: string, itemId: string, itemName: string) => {
+    // Cerrar el menú inmediatamente para cualquier acción
+    onClose();
+    
+    // Ejecutar la acción después de cerrar el menú
+    await onAction(action, itemId, itemName);
+  }
 
   return (
     <div 
@@ -51,16 +61,36 @@ export function ContextMenu({
         <p className="text-xs text-muted-foreground">ID: {itemId.slice(0, 8)}...</p>
       </div>
       
-      {actions.map((action) => (
-        <button
-          key={action.action}
-          onClick={() => onAction(action.action, itemId, itemName)}
-          className="flex w-full items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors"
-        >
-          {action.icon}
-          <span>{action.label}</span>
-        </button>
-      ))}
+      {actions.map((action) => {
+        const isDeletingThisItem = isDeleting && action.action === 'delete' ? isDeleting(itemId) : false;
+        
+        return (
+          <button
+            key={action.action}
+            onClick={() => handleAction(action.action, itemId, itemName)}
+            disabled={isDeletingThisItem}
+            className={`flex w-full items-center gap-3 px-3 py-2 text-sm transition-colors ${
+              action.action === 'delete' 
+                ? isDeletingThisItem 
+                  ? 'text-muted-foreground cursor-not-allowed' 
+                  : 'text-red-500 hover:bg-red-500/10'
+                : 'text-foreground hover:bg-secondary/50'
+            }`}
+          >
+            {isDeletingThisItem ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Eliminando...</span>
+              </>
+            ) : (
+              <>
+                {action.icon}
+                <span>{action.label}</span>
+              </>
+            )}
+          </button>
+        );
+      })}
     </div>
   )
 }

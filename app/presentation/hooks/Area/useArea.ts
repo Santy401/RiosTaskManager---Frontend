@@ -4,8 +4,8 @@ import { useAreaQueries } from "./useAreaQueries";
 
 export const useArea = (): UseAreaResult => {
     const { getAllAreas } = useAreaQueries();
-    const { createArea, deleteArea, updateArea } = useAreaActions();
+    const { createArea, deleteArea, updateArea, isDeletingArea } = useAreaActions();
     const { isLoading, error } = useAreaBase();
 
-    return { getAllAreas, createArea, deleteArea, isLoading, error, updateArea };
+    return { getAllAreas, createArea, deleteArea, isLoading, error, updateArea, isDeletingArea };
 };

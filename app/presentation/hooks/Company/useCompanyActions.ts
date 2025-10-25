@@ -1,8 +1,10 @@
 import { Company, CreateCompanyData } from "@/app/domain/entities/Company";
+import { useLoading } from '@/app/presentation/hooks/useLoading'
 import { useCompanyBase } from "./useCompanyBase";
 
 export const useCompanyActions = () => {
     const { setLoading, setError } = useCompanyBase();
+    const { addDeleting, removeDeleting, isDeleting } = useLoading();
 
     const createCompany = async (data: CreateCompanyData): Promise<Company> => {
         setLoading(true);
@@ -52,6 +54,7 @@ export const useCompanyActions = () => {
     }
 
     const deleteCompany = async (companyId: string): Promise<any> => {
+        addDeleting(companyId);
         setLoading(true);
         setError(null);
 
@@ -80,6 +83,7 @@ export const useCompanyActions = () => {
             setError(errorMessage);
             throw err;
         } finally {
+            removeDeleting(companyId);
             setLoading(false);
         }
     };
@@ -141,5 +145,5 @@ export const useCompanyActions = () => {
         }
     };
 
-    return { createCompany, deleteCompany, updateCompany, submitCompany };
+    return { createCompany, deleteCompany, updateCompany, submitCompany, isDeletingCompany: isDeleting };
 }

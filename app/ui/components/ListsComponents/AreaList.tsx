@@ -8,11 +8,10 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, MapPin, EllipsisVertical } from "lucide-react"
+import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, MapPin, EllipsisVertical, Loader2, Trash2 } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateAreaForm } from "../../components/ModalComponents/createArea"
 import { useArea } from "@/app/presentation/hooks/Area/useArea"
-import AreaActionsMenu from "./ActionsMenu/AreaActionsMenu"
 import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu'
 import { ContextMenu } from '@/app/ui/components/ListsComponents/ActionsMenu/ContextMenu'
 
@@ -35,7 +34,7 @@ export function AreaList() {
   const [isEditMode, setIsEditMode] = useState(false)
   const itemsPerPage = 10
 
-  const { getAllAreas, isLoading, createArea, deleteArea, updateArea } = useArea();
+  const { getAllAreas, isLoading, createArea, deleteArea, updateArea, isDeletingArea } = useArea();
   const {
     contextMenu,
     handleDoubleClick,
@@ -182,43 +181,70 @@ export function AreaList() {
           </TableHeader>
           <TableBody>
             {hasAreas ? (
-              filteredAreas.map((area) => (
-                <TableRow key={area.id} className="border-border hover:bg-secondary/30"
-                  onContextMenu={(e) => handleContextMenu(e, area.id, area.name)}
-                  onDoubleClick={(e) => handleDoubleClick(e, area.id, area.name)}
-                  onClick={(e) => handleDoubleTap(e, area.id, area.name)}
-                  onTouchStart={(e) => handleDoubleTap(e, area.id, area.name)}
-                >
-                  <TableCell>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={undefined} />
-                      <AvatarFallback className="bg-blue-500/20 text-blue-400 text-xs">
-                        <MapPin className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell className="font-medium text-foreground">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">{area.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={area.state === "activo" ? "default" : "secondary"}
-                      className={
-                        area.state === "activo"
-                          ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                          : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                      }
-                    >
-                      {area.state === "activo" ? "Activo" : "Inactivo"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(area.createdAt).toLocaleDateString('es-ES')}
-                  </TableCell>
-                </TableRow>
-              ))
+              filteredAreas.map((area) => {
+                const isDeleting = isDeletingArea(area.id);
+                
+                return (
+                  <TableRow 
+                    key={area.id} 
+                    className={`border-border hover:bg-secondary/30 ${
+                      isDeleting ? 'opacity-50 pointer-events-none' : ''
+                    }`}
+                    onContextMenu={(e) => !isDeleting && handleContextMenu(e, area.id, area.name)}
+                    onDoubleClick={(e) => !isDeleting && handleDoubleClick(e, area.id, area.name)}
+                    onClick={(e) => !isDeleting && handleDoubleTap(e, area.id, area.name)}
+                    onTouchStart={(e) => !isDeleting && handleDoubleTap(e, area.id, area.name)}
+                  >
+                    <TableCell>
+                      {isDeleting ? (
+                        <div className="flex items-center justify-center">
+                          <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                        </div>
+                      ) : (
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={undefined} />
+                          <AvatarFallback className="bg-blue-500/20 text-blue-400 text-xs">
+                            <MapPin className="h-4 w-4" />
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {isDeleting ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                          <span className="text-muted-foreground">Eliminando...</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-foreground">{area.name}</span>
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isDeleting ? (
+                        <div className="h-6 flex items-center">
+                          <span className="text-xs text-muted-foreground">-</span>
+                        </div>
+                      ) : (
+                        <Badge
+                          variant={area.state === "activo" ? "default" : "secondary"}
+                          className={
+                            area.state === "activo"
+                              ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                              : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                          }
+                        >
+                          {area.state === "activo" ? "Activo" : "Inactivo"}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {isDeleting ? '-' : new Date(area.createdAt).toLocaleDateString('es-ES')}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8">
@@ -247,6 +273,7 @@ export function AreaList() {
           onAction={handleMenuAction}
           onClose={closeContextMenu}
           menuRef={contextMenuRef}
+          isDeleting={isDeletingArea} 
         />
       </div>
 
@@ -331,7 +358,7 @@ export function AreaList() {
             setIsEditMode(false)
           }}
           onSuccess={handleCreateSuccess}
-          editingArea={editingArea} // ← Agrega esta prop
+          editingArea={editingArea}
         />
       </SlideModal>
     </div>

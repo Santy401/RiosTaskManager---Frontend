@@ -6,7 +6,7 @@ import { UseCompanyResult } from "./types";
 export const useCompany = (): UseCompanyResult => {
     const { isLoading, error } = useCompanyBase();
     const { getAllCompany } = useCompanyQueries();
-    const { createCompany, deleteCompany, updateCompany } = useCompanyActions();
+    const { createCompany, deleteCompany, updateCompany, isDeletingCompany } = useCompanyActions();
 
     return {
         getAllCompany,
@@ -14,6 +14,7 @@ export const useCompany = (): UseCompanyResult => {
         deleteCompany,
         updateCompany,
         isLoading,
+        isDeletingCompany,
         error
     };
 };

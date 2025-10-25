@@ -1,7 +1,9 @@
 import { useTaskBase } from "./useTaskBase";
+import { useLoading } from '@/app/presentation/hooks/useLoading'
 
 export const useTaskActions = () => {
     const { setLoading, setError } = useTaskBase();
+    const { addDeleting, removeDeleting, isDeleting } = useLoading();
 
     const createTask = async (data: CreateTaskData): Promise<Task> => {
         setLoading(true);
@@ -51,6 +53,7 @@ export const useTaskActions = () => {
     }
 
     const deleteTask = async (taskId: string): Promise<any> => {
+        addDeleting(taskId);
         setLoading(true);
         setError(null);
 
@@ -79,6 +82,7 @@ export const useTaskActions = () => {
             setError(errorMessage);
             throw err;
         } finally {
+            removeDeleting(taskId);
             setLoading(false);
         }
     }
@@ -140,5 +144,5 @@ export const useTaskActions = () => {
         }
     }
 
-    return { createTask, deleteTask, updateTask, submitTask }
+    return { createTask, deleteTask, updateTask, submitTask, isDeletingTask: isDeleting }
 }

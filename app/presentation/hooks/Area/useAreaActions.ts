@@ -1,7 +1,9 @@
 import { useAreaBase } from "./useAreaBase";
+import { useLoading } from '@/app/presentation/hooks/useLoading'
 
 export const useAreaActions = () => {
     const { setLoading, setError } = useAreaBase();
+    const { addDeleting, removeDeleting, isDeleting } = useLoading();
 
     const createArea = async (data: CreateAreaData): Promise<Area> => {
         setLoading(true);
@@ -52,6 +54,7 @@ export const useAreaActions = () => {
 
 
     const deleteArea = async (areaId: string): Promise<any> => {
+        addDeleting(areaId);
         setLoading(true);
         setError(null);
 
@@ -80,6 +83,7 @@ export const useAreaActions = () => {
             setError(errorMessage);
             throw err;
         } finally {
+            removeDeleting(areaId);
             setLoading(false);
         }
     };
@@ -143,5 +147,5 @@ export const useAreaActions = () => {
 
     const clearError = () => setError(null);
 
-    return { createArea, deleteArea, updateArea, submitArea }
+    return { createArea, deleteArea, updateArea, submitArea, isDeletingArea: isDeleting }
 }
