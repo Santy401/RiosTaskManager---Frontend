@@ -8,7 +8,7 @@ import { Input } from "@/app/ui/components/StyledComponents/input"
 import { Label } from "@/app/ui/components/StyledComponents/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
-import { Loader2, CheckCircle2, XCircle } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react"
 import { Company } from "@prisma/client"
 
 interface CreateCompanyFormProps {
@@ -39,6 +39,11 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showClaveCorreo, setShowClaveCorreo] = useState(false)
+  const [showClaveCC, setShowClaveCC] = useState(false)
+  const [showClaveSS, setShowClaveSS] = useState(false)
+  const [showClaveICA, setShowClaveICA] = useState(false)
 
   // Cargar datos cuando hay empresa a editar
   useEffect(() => {
@@ -162,6 +167,12 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
     if (error) setError(null)
   }
 
+  const togglePasswordVisibility = () => setShowPassword(!showPassword)
+  const toggleClaveCorreoVisibility = () => setShowClaveCorreo(!showClaveCorreo)
+  const toggleClaveCCVisibility = () => setShowClaveCC(!showClaveCC)
+  const toggleClaveSSVisibility = () => setShowClaveSS(!showClaveSS)
+  const toggleClaveICAVisibility = () => setShowClaveICA(!showClaveICA)
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full">
       <div className="flex-1 px-6 py-6 space-y-6 overflow-y-auto max-h-[70vh]">
@@ -266,16 +277,32 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
           <Label htmlFor="contraseña" className="text-sm font-medium text-foreground">
             Contraseña *
           </Label>
-          <Input
-            id="contraseña"
-            type="password"
-            placeholder="Contraseña de acceso"
-            value={formData.contraseña}
-            onChange={(e) => handleInputChange("contraseña", e.target.value)}
-            className="bg-secondary/50 border-border text-white"
-            required
-            disabled={isLoading || success}
-          />
+          <div className="relative">
+            <Input
+              id="contraseña"
+              type={showPassword ? "text" : "password"}
+              placeholder="Contraseña de acceso"
+              value={formData.contraseña}
+              onChange={(e) => handleInputChange("contraseña", e.target.value)}
+              className="bg-secondary/50 border-border text-white pr-10"
+              required
+              disabled={isLoading || success}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={togglePasswordVisibility}
+              disabled={isLoading || success}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Servidor Correo Field */}
@@ -385,15 +412,31 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
           <Label htmlFor="claveCorreo" className="text-sm font-medium text-foreground">
             Clave Correo
           </Label>
-          <Input
-            id="claveCorreo"
-            type="password"
-            placeholder="Contraseña del correo"
-            value={formData.claveCorreo}
-            onChange={(e) => handleInputChange("claveCorreo", e.target.value)}
-            className="bg-secondary/50 border-border text-white"
-            disabled={isLoading || success}
-          />
+          <div className="relative">
+            <Input
+              id="claveCorreo"
+              type={showClaveCorreo ? "text" : "password"}
+              placeholder="Contraseña del correo"
+              value={formData.claveCorreo}
+              onChange={(e) => handleInputChange("claveCorreo", e.target.value)}
+              className="bg-secondary/50 border-border text-white pr-10"
+              disabled={isLoading || success}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={toggleClaveCorreoVisibility}
+              disabled={isLoading || success}
+            >
+              {showClaveCorreo ? (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Clave CC Field */}
@@ -401,15 +444,31 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
           <Label htmlFor="claveCC" className="text-sm font-medium text-foreground">
             Clave CC
           </Label>
-          <Input
-            id="claveCC"
-            type="password"
-            placeholder="Clave CC"
-            value={formData.claveCC}
-            onChange={(e) => handleInputChange("claveCC", e.target.value)}
-            className="bg-secondary/50 border-border text-white"
-            disabled={isLoading || success}
-          />
+          <div className="relative">
+            <Input
+              id="claveCC"
+              type={showClaveCC ? "text" : "password"}
+              placeholder="Clave CC"
+              value={formData.claveCC}
+              onChange={(e) => handleInputChange("claveCC", e.target.value)}
+              className="bg-secondary/50 border-border text-white pr-10"
+              disabled={isLoading || success}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={toggleClaveCCVisibility}
+              disabled={isLoading || success}
+            >
+              {showClaveCC ? (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Clave SS Field */}
@@ -417,15 +476,31 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
           <Label htmlFor="claveSS" className="text-sm font-medium text-foreground">
             Clave SS
           </Label>
-          <Input
-            id="claveSS"
-            type="password"
-            placeholder="Clave SS"
-            value={formData.claveSS}
-            onChange={(e) => handleInputChange("claveSS", e.target.value)}
-            className="bg-secondary/50 border-border text-white"
-            disabled={isLoading || success}
-          />
+          <div className="relative">
+            <Input
+              id="claveSS"
+              type={showClaveSS ? "text" : "password"}
+              placeholder="Clave SS"
+              value={formData.claveSS}
+              onChange={(e) => handleInputChange("claveSS", e.target.value)}
+              className="bg-secondary/50 border-border text-white pr-10"
+              disabled={isLoading || success}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={toggleClaveSSVisibility}
+              disabled={isLoading || success}
+            >
+              {showClaveSS ? (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Clave ICA Field */}
@@ -433,15 +508,31 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
           <Label htmlFor="claveICA" className="text-sm font-medium text-foreground">
             Clave ICA
           </Label>
-          <Input
-            id="claveICA"
-            type="password"
-            placeholder="Clave ICA"
-            value={formData.claveICA}
-            onChange={(e) => handleInputChange("claveICA", e.target.value)}
-            className="bg-secondary/50 border-border text-white"
-            disabled={isLoading || success}
-          />
+          <div className="relative">
+            <Input
+              id="claveICA"
+              type={showClaveICA ? "text" : "password"}
+              placeholder="Clave ICA"
+              value={formData.claveICA}
+              onChange={(e) => handleInputChange("claveICA", e.target.value)}
+              className="bg-secondary/50 border-border text-white pr-10"
+              disabled={isLoading || success}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+              onClick={toggleClaveICAVisibility}
+              disabled={isLoading || success}
+            >
+              {showClaveICA ? (
+                <EyeOff className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
