@@ -6,8 +6,8 @@ const prisma = new PrismaClient();
 async function main() {
   try {
     // Create default admin user
-    const adminEmail = 'admin@rios.com';
-    const adminPassword = 'admin123'; // You can change this password
+    const adminEmail = 'erios@riosbackend.com';
+    const adminPassword = 'H2025c*'; // You can change this password
 
     // Check if admin user already exists
     const existingAdmin = await prisma.user.findUnique({

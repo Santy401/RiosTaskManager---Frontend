@@ -3,10 +3,27 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 import { updateTask } from "@/lib/task";
 
+interface UpdateTask {
+  name?: string;
+  description?: string;
+  dueDate?: Date;
+  status?: string;
+  companyId?: string;
+  areaId?: string;
+  userId?: string;
+}
+
+interface DecodedToken {
+  role?: string;
+  userId?: string;
+  id?: string;
+}
+
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -17,7 +34,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
@@ -81,7 +98,7 @@ export async function DELETE(
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -90,7 +107,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
 
     if (decoded.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
@@ -109,7 +126,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Al menos un campo debe ser actualizado' }, { status: 400 });
     }
 
-    // Verificar que la tarea existe
     const existingTask = await prisma.task.findUnique({
       where: { id: taskId },
     });
@@ -118,7 +134,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Tarea no encontrada' }, { status: 404 });
     }
 
-    // Validar referencias si se proporcionan
     if (companyId) {
       const companyExists = await prisma.company.findUnique({
         where: { id: companyId },
@@ -146,7 +161,7 @@ export async function PUT(
       }
     }
 
-    const updateData: any = {};
+    const updateData: UpdateTask = {};
     if (name) updateData.name = name;
     if (description) updateData.description = description;
     if (dueDate) updateData.dueDate = new Date(dueDate);

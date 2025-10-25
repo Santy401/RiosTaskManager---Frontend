@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 
+interface DecodedToken {
+  role?: string;
+  userId?: string;
+  id?: string;
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -16,7 +22,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
@@ -80,7 +86,7 @@ export async function DELETE(
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -91,7 +97,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
@@ -104,7 +110,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description, companyId, status } = body;
+    const { name, companyId, status } = body;
 
     if (!name || name.trim() === '') {
       return NextResponse.json({ error: 'El nombre del área es requerido' }, { status: 400 });

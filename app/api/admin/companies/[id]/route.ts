@@ -2,10 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 
+interface DecodedToken {
+  role?: string;
+  userId?: string;
+  id?: string;
+}
+
+interface CompanyUpdateData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  nit?: string;
+  state?: boolean;
+  updatedAt: Date;
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -16,7 +32,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
@@ -54,7 +70,7 @@ export async function DELETE(
       deletedCompanyId: companyId
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Error en DELETE /api/admin/companies/[id]:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {
@@ -86,7 +102,7 @@ export async function DELETE(
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -97,7 +113,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
@@ -112,7 +128,6 @@ export async function PUT(
     const body = await request.json();
     const { name, email, phone, address, nit, state } = body;
 
-    // Validar que al menos un campo sea proporcionado para actualizar
     if (!name && !email && !phone && !address && !nit && state === undefined) {
       return NextResponse.json({
         error: 'Al menos un campo debe ser actualizado'
@@ -127,22 +142,22 @@ export async function PUT(
       return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });
     }
 
-    // Prevenir edición de empresa principal del sistema
     if (existingCompany.tipo === 'Sistema' || existingCompany.name === 'Empresa Principal') {
       return NextResponse.json({
         error: 'No se puede modificar la empresa principal del sistema'
       }, { status: 403 });
     }
 
-    // Construir datos de actualización dinámicamente
-    const updateData: any = {};
+    const updateData: CompanyUpdateData = {
+      updatedAt: new Date()
+    };
+    
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
     if (address) updateData.address = address;
     if (nit) updateData.nit = nit;
     if (state !== undefined) updateData.state = state;
-    updateData.updatedAt = new Date();
 
     const updatedCompany = await prisma.company.update({
       where: { id: companyId },
@@ -157,7 +172,7 @@ export async function PUT(
       company: updatedCompany
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('❌ Error en PUT /api/admin/companies/[id]:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {

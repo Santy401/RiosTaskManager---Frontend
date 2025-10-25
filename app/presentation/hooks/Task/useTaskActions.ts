@@ -1,7 +1,16 @@
 import { useTaskBase } from "./useTaskBase";
 import { useLoading } from '@/app/presentation/hooks/useLoading'
+import { Task, CreateTaskData, UpdateTaskData, DeleteTaskResponse } from "./type";
 
-export const useTaskActions = () => {
+interface UseTaskActionsResult {
+    createTask: (data: CreateTaskData) => Promise<Task>;
+    deleteTask: (taskId: string) => Promise<DeleteTaskResponse>;
+    updateTask: (params: { taskId: string; data: UpdateTaskData }) => Promise<Task>;
+    submitTask: (data: CreateTaskData, editingTask?: Task | null) => Promise<Task>;
+    isDeletingTask: (taskId: string) => boolean;
+}
+
+export const useTaskActions = (): UseTaskActionsResult => {
     const { setLoading, setError } = useTaskBase();
     const { addDeleting, removeDeleting, isDeleting } = useLoading();
 
@@ -52,7 +61,7 @@ export const useTaskActions = () => {
         }
     }
 
-    const deleteTask = async (taskId: string): Promise<any> => {
+    const deleteTask = async (taskId: string): Promise<DeleteTaskResponse> => {
         addDeleting(taskId);
         setLoading(true);
         setError(null);
@@ -144,5 +153,11 @@ export const useTaskActions = () => {
         }
     }
 
-    return { createTask, deleteTask, updateTask, submitTask, isDeletingTask: isDeleting }
+    return { 
+        createTask, 
+        deleteTask, 
+        updateTask, 
+        submitTask, 
+        isDeletingTask: isDeleting 
+    };
 }

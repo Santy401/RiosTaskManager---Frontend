@@ -16,11 +16,17 @@ interface UpdateAreaData {
     state?: boolean;
 }
 
-interface UseAreaResult {
+interface DeleteAreaResponse {
+    success: boolean;
+    message: string;
+    deletedAreaId: string;
+}
+
+interface _UseAreaResult {
     getAllAreas: () => Promise<Area[]>;
     createArea: (data: CreateAreaData) => Promise<Area>;
-    updateArea: (params: { areaId: string; data: UpdateAreaData }) => Promise<Area>; // ← Quita el ?
-    deleteArea: (areaId: string) => Promise<any>;
+    updateArea: (params: { areaId: string; data: UpdateAreaData }) => Promise<Area>;
+    deleteArea: (areaId: string) => Promise<DeleteAreaResponse>;
     isDeletingArea: (areaId: string) => boolean;
     isLoading: boolean;
     error: string | null;

@@ -1,6 +1,14 @@
 import { useState } from "react";
 
-export const useTaskBase = () => {
+interface UseTaskBaseResult {
+    isLoading: boolean;
+    error: string | null;
+    setLoading: (loading: boolean) => void;
+    setError: (error: string | null) => void;
+}
+
+
+export const useTaskBase = (): UseTaskBaseResult => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 

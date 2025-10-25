@@ -1,9 +1,15 @@
 import { useUserBase } from "./useUserBase";
+import { CreateUserData, CreateUserResponse, DeleteUserResponse } from "./types";
 
-export const useUserActions = () => {
+interface UseUserActionsResult {
+    createUser: (data: CreateUserData) => Promise<CreateUserResponse>;
+    deleteUser: (userId: string) => Promise<DeleteUserResponse>;
+}
+
+export const useUserActions = (): UseUserActionsResult => {
     const { setLoading, setError } = useUserBase();
 
-    const createUser = async (data: CreateUserData): Promise<any> => {
+    const createUser = async (data: CreateUserData): Promise<CreateUserResponse> => {
         setLoading(true);
         setError(null);
 
@@ -33,7 +39,8 @@ export const useUserActions = () => {
                 throw new Error(errorData.error || 'Error al crear usuario');
             }
 
-            return await response.json();
+            const result = await response.json();
+            return result;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             setError(errorMessage);
@@ -43,7 +50,7 @@ export const useUserActions = () => {
         }
     };
 
-    const deleteUser = async (userId: string): Promise<any> => {
+    const deleteUser = async (userId: string): Promise<DeleteUserResponse> => {
         setLoading(true);
         setError(null);
 

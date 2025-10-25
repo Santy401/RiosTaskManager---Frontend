@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-export async function GET(request: Request) {
+interface DecodedToken {
+    role?: string;
+    userId?: string;
+    id?: string;
+    email?: string;
+}
+
+export async function GET(request: Request): Promise<NextResponse> {
     try {
         console.log('🔐 Verificando token en /api/auth/me');
 
@@ -13,7 +20,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
         console.log('📖 Token decodificado:', decoded);
 
         return NextResponse.json({

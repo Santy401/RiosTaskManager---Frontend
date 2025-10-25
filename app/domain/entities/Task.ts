@@ -1,5 +1,5 @@
 
-interface Task {
+interface _Task {
     id: string;
     name: string;
     description: string;
@@ -23,7 +23,7 @@ interface Task {
     };
 }
 
-interface CreateTaskData {
+interface _CreateTaskData {
     name: string;
     description: string;
     dueDate: Date;
@@ -33,7 +33,7 @@ interface CreateTaskData {
     userId: string;
 }
 
-interface UpdateTaskData {
+interface _UpdateTaskData {
     name?: string;
     description?: string;
     dueDate?: Date;

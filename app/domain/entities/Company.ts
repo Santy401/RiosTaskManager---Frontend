@@ -39,10 +39,16 @@ export interface CreateCompanyData {
     // porque son generados automáticamente por la base de datos
 }
 
+interface DeleteCompanyResponse {
+    success: boolean;
+    message: string;
+    deletedCompanyId: string;
+}
+
 export interface UseCompanyResult {
     getAllCompany: () => Promise<Company[]>;
     createCompany: (data: CreateCompanyData) => Promise<Company>;
-    deleteCompany: (companyId: string) => Promise<any>;
+    deleteCompany: (companyId: string) => Promise<DeleteCompanyResponse>;
     updateCompany: (params: { companyId: string; data: Partial<CreateCompanyData> }) => Promise<Company>;
     isLoading: boolean;
     error: string | null;

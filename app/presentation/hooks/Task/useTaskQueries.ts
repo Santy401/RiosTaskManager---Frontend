@@ -1,6 +1,24 @@
 import { useTaskBase } from './useTaskBase'
 
-export const useTaskQuieries = () => {
+interface Task {
+    id: string;
+    name: string;
+    description: string;
+    status: string;
+    dueDate: Date;
+    companyId: string;
+    areaId: string;
+    userId: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+interface UseTaskQueriesResult {
+    getAllTasks: () => Promise<Task[]>;
+    getTaskById: (taskId: string) => Promise<Task>;
+}
+
+export const useTaskQueries = (): UseTaskQueriesResult => {
     const { setLoading, setError } = useTaskBase();
 
     const getAllTasks = async (): Promise<Task[]> => {

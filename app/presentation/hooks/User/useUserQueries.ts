@@ -1,6 +1,22 @@
 import { useUserBase } from "./useUserBase";
 
-export const useUserQueries = () => {
+interface User {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    companyId: string;
+    areaId: string;
+    state: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+interface UseUserQueriesResult {
+    getAllUsers: () => Promise<User[]>;
+}
+
+export const useUserQueries = (): UseUserQueriesResult => {
     const { setLoading, setError } = useUserBase();
 
     const getAllUsers = async (): Promise<User[]> => {
@@ -48,5 +64,4 @@ export const useUserQueries = () => {
     };
 
     return { getAllUsers }
-
 }

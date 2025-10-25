@@ -1,7 +1,22 @@
-import { ContextMenuState } from "@/app/domain/entities/Menu"
 import { useRef, useState } from "react"
 
-export const useContextMenuBase = () => {
+interface ContextMenuState {
+    visible: boolean;
+    x: number;
+    y: number;
+    itemId: string | null;
+    itemName: string;
+}
+
+interface UseContextMenuBaseResult {
+    contextMenu: ContextMenuState;
+    setContextMenu: React.Dispatch<React.SetStateAction<ContextMenuState>>;
+    contextMenuRef: React.RefObject<HTMLDivElement | null>;
+    lastTap: number;
+    setLastTap: React.Dispatch<React.SetStateAction<number>>;
+}
+
+export const useContextMenuBase = (): UseContextMenuBaseResult => {
     const [contextMenu, setContextMenu] = useState<ContextMenuState>({
         visible: false,
         x: 0,

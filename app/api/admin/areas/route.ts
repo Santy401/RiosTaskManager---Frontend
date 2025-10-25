@@ -3,7 +3,13 @@ import jwt from 'jsonwebtoken'
 import { getAllArea } from "@/lib/area";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: Request) {
+interface DecodedToken {
+  role?: string;
+  userId?: string;
+  id?: string;
+}
+
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -14,7 +20,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (decoded.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
@@ -39,7 +45,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
 
     if (decoded.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });

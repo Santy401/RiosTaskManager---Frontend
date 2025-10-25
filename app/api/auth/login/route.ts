@@ -5,14 +5,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest) {
+export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
     message: 'Use POST method for login',
     endpoint: '/api/auth/login'
   }, { status: 200 });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const { email, password } = await req.json();
 

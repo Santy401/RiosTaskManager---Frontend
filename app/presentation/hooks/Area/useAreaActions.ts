@@ -1,7 +1,16 @@
 import { useAreaBase } from "./useAreaBase";
 import { useLoading } from '@/app/presentation/hooks/useLoading'
+import { DeleteAreaResponse } from "./types";
 
-export const useAreaActions = () => {
+interface UseAreaActionsResult {
+    createArea: (data: CreateAreaData) => Promise<Area>;
+    deleteArea: (areaId: string) => Promise<DeleteAreaResponse>;
+    updateArea: (params: { areaId: string; data: UpdateAreaData }) => Promise<Area>;
+    submitArea: (data: CreateAreaData, editingArea?: Area | null) => Promise<Area>;
+    isDeletingArea: (areaId: string) => boolean;
+}
+
+export const useAreaActions = (): UseAreaActionsResult => {
     const { setLoading, setError } = useAreaBase();
     const { addDeleting, removeDeleting, isDeleting } = useLoading();
 
@@ -52,8 +61,7 @@ export const useAreaActions = () => {
         }
     };
 
-
-    const deleteArea = async (areaId: string): Promise<any> => {
+    const deleteArea = async (areaId: string): Promise<DeleteAreaResponse> => {
         addDeleting(areaId);
         setLoading(true);
         setError(null);
@@ -145,7 +153,11 @@ export const useAreaActions = () => {
         }
     };
 
-    const clearError = () => setError(null);
-
-    return { createArea, deleteArea, updateArea, submitArea, isDeletingArea: isDeleting }
-}
+    return {
+        createArea,
+        deleteArea,
+        updateArea,
+        submitArea,
+        isDeletingArea: isDeleting
+    };
+};

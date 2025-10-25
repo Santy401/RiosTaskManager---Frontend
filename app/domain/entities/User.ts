@@ -1,11 +1,11 @@
-interface User {
+interface _User {
     id: string;
     name: string;
     email: string;
     role: string;
 }
 
-interface CreateUserData {
+interface _CreateUserData {
     name: string;
     email: string;
     role: string;

@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 
+interface DecodedToken {
+  role?: string;
+  userId?: string;
+  id?: string;
+}
+
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -16,7 +23,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     // Only allow users to update their own tasks
     if (decoded.role !== 'user' && decoded.role !== 'admin') {

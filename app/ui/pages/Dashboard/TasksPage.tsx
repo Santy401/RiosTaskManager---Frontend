@@ -1,19 +1,20 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/ui/components/StyledComponents/avatar"
+import { useEffect, useState, useRef, useCallback, JSX } from "react"
+import { Avatar, AvatarFallback } from "@/app/ui/components/StyledComponents/avatar"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
 import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Calendar, User, Building2, MapPin, EllipsisVertical, Edit, Trash2, Eye, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, User, Building2, MapPin, Loader2 } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateTaskForm } from "../../components/ModalComponents/createTask"
 import { useTask } from "@/app/presentation/hooks/Task/useTask"
 import { ContextMenu } from '@/app/ui/components/ListsComponents/ActionsMenu/ContextMenu'
 
+// Interface para Task con todas las propiedades necesarias
 interface Task {
   id: string;
   name: string;
@@ -22,8 +23,6 @@ interface Task {
   status: 'pendiente' | 'en_progreso' | 'terminada';
   createdAt: Date;
   updatedAt: Date;
-
-  // Relaciones
   company: {
     id: string;
     name: string;
@@ -49,7 +48,18 @@ interface ContextMenuState {
   taskName?: string;
 }
 
-export function TasksPage() {
+// Interface para los datos del formulario
+interface CreateTaskFormData {
+  name: string;
+  description: string;
+  status: string;
+  dueDate: Date;
+  companyId: string;
+  areaId: string;
+  userId: string;
+}
+
+export function TasksPage(): JSX.Element {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
@@ -66,20 +76,43 @@ export function TasksPage() {
   const [isEditMode, setIsEditMode] = useState(false)
 
   const [lastTap, setLastTap] = useState(0)
-  const tapTimer = useRef<NodeJS.Timeout | null>(null)
-
   const itemsPerPage = 10
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
 
   const { getAllTasks, isLoading, createTask, deleteTask, updateTask, isDeletingTask } = useTask();
 
+  // Función para cargar tareas con casting de tipo
+  const fetchTasks = useCallback(async (): Promise<Task[]> => {
+    try {
+      const taskData = await getAllTasks();
+      // Casting para asegurar el tipo correcto
+      return taskData as unknown as Task[];
+    } catch (error) {
+      console.log(error)
+      return [];
+    }
+  }, [getAllTasks])
+
+  // useEffect para carga inicial
   useEffect(() => {
-    loadTasks()
-  }, [])
+    let isMounted = true;
+
+    const loadData = async (): Promise<void> => {
+      const taskData = await fetchTasks();
+      if (isMounted) {
+        setTasks(taskData);
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchTasks]);
 
   // Cerrar menú al hacer click fuera
   useEffect(() => {
-    const handleClickOutside = () => {
+    const handleClickOutside = (): void => {
       if (contextMenu.visible) {
         setContextMenu(prev => ({ ...prev, visible: false }))
       }
@@ -89,25 +122,20 @@ export function TasksPage() {
     return () => document.removeEventListener('click', handleClickOutside)
   }, [contextMenu.visible])
 
-  const loadTasks = async () => {
-    try {
-      console.log('🔄 [COMPONENT] Cargando tareas...');
-      const taskData = await getAllTasks();
-      console.log('✅ [COMPONENT] Tareas cargadas:', taskData);
-      setTasks(taskData)
-    } catch (error) {
-      console.error('❌ [COMPONENT] Error al cargar tareas:', error)
-    }
-  }
+  // Función para recargar tareas manualmente
+  const loadTasks = useCallback(async (): Promise<void> => {
+    const taskData = await fetchTasks();
+    setTasks(taskData);
+  }, [fetchTasks]);
 
   // Manejar click derecho
-  const handleContextMenu = (event: React.MouseEvent, task: Task) => {
+  const handleContextMenu = (event: React.MouseEvent, task: Task): void => {
     event.preventDefault()
     openContextMenu(event, task)
   }
 
   // Abrir menú contextual
-  const openContextMenu = (event: React.MouseEvent, task: Task) => {
+  const openContextMenu = (event: React.MouseEvent, task: Task): void => {
     try {
       setContextMenu({
         visible: true,
@@ -116,8 +144,7 @@ export function TasksPage() {
         itemId: task.id,
         itemName: task.name
       })
-    } catch (error) {
-      console.error('Error abriendo menú contextual:', error)
+    } catch {
       setContextMenu({
         visible: true,
         x: 100,
@@ -129,16 +156,14 @@ export function TasksPage() {
   }
 
   // Acciones del menú contextual
-  const handleMenuAction = async (action: string, itemId: string, itemName: string) => {
+  const handleMenuAction = async (action: string, itemId: string, itemName: string): Promise<void> => {
     try {
       switch (action) {
         case 'view':
-          console.log('👁️ Ver tarea:', itemId)
           alert(`Ver detalles de: ${itemName}`)
           break
 
         case 'edit':
-          console.log('✏️ Editar tarea:', itemId)
           const taskToEdit = tasks.find(task => task.id === itemId)
           if (taskToEdit) {
             setEditingTask(taskToEdit)
@@ -154,20 +179,20 @@ export function TasksPage() {
           }
           break
       }
-    } catch (error) {
-      console.error('Error en acción del menú:', error)
+    } catch {
+      // Error silencioso
     }
   }
 
-  const closeContextMenu = () => {
+  const closeContextMenu = (): void => {
     setContextMenu(prev => ({ ...prev, visible: false }))
   }
 
-  const handleDoubleClick = (event: React.MouseEvent, task: Task) => {
+  const handleDoubleClick = (event: React.MouseEvent, task: Task): void => {
     openContextMenu(event, task)
   }
 
-  const handleDoubleTap = (event: React.MouseEvent | React.TouchEvent, task: Task) => {
+  const handleDoubleTap = (event: React.MouseEvent | React.TouchEvent, task: Task): void => {
     const currentTime = new Date().getTime()
     const tapLength = currentTime - lastTap
 
@@ -202,7 +227,7 @@ export function TasksPage() {
   const hasTasks = filteredTasks.length > 0
 
   // Función para obtener el color del badge según el estado
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: string): { variant: "default" | "secondary"; className: string } => {
     switch (status) {
       case 'terminada':
         return { variant: "default" as const, className: "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 cursor-pointer" }
@@ -216,7 +241,7 @@ export function TasksPage() {
   }
 
   // Función para formatear fecha
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date): string => {
     return new Date(date).toLocaleDateString('es-ES', {
       day: '2-digit',
       month: '2-digit',
@@ -225,31 +250,30 @@ export function TasksPage() {
   }
 
   // Verificar si la tarea está vencida
-  const isOverdue = (dueDate: Date) => {
+  const isOverdue = (dueDate: Date): boolean => {
     return new Date(dueDate) < new Date()
   }
 
-  const handleCreateTask = async (taskData: any) => {
+  const handleCreateTask = async (taskData: CreateTaskFormData): Promise<void> => {
     try {
       if (isEditMode && editingTask) {
         await updateTask({ taskId: editingTask.id, data: taskData })
       } else {
         await createTask(taskData)
       }
-    } catch (error) {
-      console.error('Error en operación tarea:', error)
-      throw error
+    } catch {
+      throw new Error('Error en operación tarea')
     }
   }
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = (): void => {
     setIsModalOpen(false)
     setEditingTask(null)
     setIsEditMode(false)
     loadTasks()
   }
 
-  const handleAddTaskClick = () => {
+  const handleAddTaskClick = (): void => {
     setEditingTask(null)
     setIsEditMode(false)
     setIsModalOpen(true)
@@ -407,7 +431,7 @@ export function TasksPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
-                            <span className="text-sm text-[#7a7a7a]">{task.user.name || 'Sin asignar'}</span>
+                            <span className="text-sm text-[#858585]">{task.user.name || 'Sin asignar'}</span>
                             <span className="text-xs text-muted-foreground">{task.user.email}</span>
                           </div>
                         </div>

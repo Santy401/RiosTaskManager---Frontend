@@ -2,7 +2,9 @@ import { useEffect } from "react"
 import { useContextMenuBase } from "./useContextMenuBase";
 import { useCloseContextMenu } from './useCloseContextMenu'
 
-export const useContextMenuEffects = (base: ReturnType<typeof useContextMenuBase>) => {
+type ContextMenuBase = ReturnType<typeof useContextMenuBase>;
+
+export const useContextMenuEffects = (base: ContextMenuBase): void => {
     const { contextMenu, contextMenuRef } = base;
     const { closeContextMenu } = useCloseContextMenu(base);
 
@@ -18,6 +20,7 @@ export const useContextMenuEffects = (base: ReturnType<typeof useContextMenuBase
             document.addEventListener('mousedown', handleClickOutside);
         }
 
+        // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };

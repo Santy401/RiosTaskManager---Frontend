@@ -1,7 +1,11 @@
 import { useCallback } from "react";
 import { useAreaBase } from "./useAreaBase";
 
-export const useAreaQueries = () => {
+interface UseAreaQueriesResult {
+    getAllAreas: () => Promise<Area[]>;
+}
+
+export const useAreaQueries = (): UseAreaQueriesResult => {
     const { setError, setLoading } = useAreaBase();
 
     const getAllAreas = useCallback(async (): Promise<Area[]> => {
@@ -42,7 +46,7 @@ export const useAreaQueries = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [setError, setLoading]);
 
     return { getAllAreas }
 

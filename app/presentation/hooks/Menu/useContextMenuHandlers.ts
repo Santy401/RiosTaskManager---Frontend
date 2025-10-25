@@ -1,6 +1,15 @@
 import { useContextMenuBase } from "./useContextMenuBase";
 
-export const useContextMenuHandlers = (base: ReturnType<typeof useContextMenuBase>) => {
+type ContextMenuBase = ReturnType<typeof useContextMenuBase>;
+
+interface UseContextMenuHandlersResult {
+    openContextMenu: (event: React.MouseEvent, itemId: string, itemName: string) => void;
+    handleDoubleClick: (event: React.MouseEvent, itemId: string, itemName: string) => void;
+    handleDoubleTap: (event: React.MouseEvent | React.TouchEvent, itemId: string, itemName: string) => void;
+    handleContextMenu: (event: React.MouseEvent, itemId: string, itemName: string) => void;
+}
+
+export const useContextMenuHandlers = (base: ContextMenuBase): UseContextMenuHandlersResult => {
     const { setContextMenu, lastTap, setLastTap } = base;
 
     const openContextMenu = (event: React.MouseEvent, itemId: string, itemName: string) => {

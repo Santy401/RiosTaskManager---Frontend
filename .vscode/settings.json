@@ -1,0 +1,36 @@
+{
+  "eslint.enable": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact", 
+    "typescript",
+    "typescriptreact"
+  ],
+  
+  // CORREGIR AUTOMÁTICAMENTE AL GUARDAR
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  
+  // MOSTRAR PROBLEMAS EN TIEMPO REAL
+  "problems.showCurrentInStatus": true,
+  
+  // SUBRAYADO EN ROJO INTENSO
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "invalid.deprecated",
+        "settings": {
+          "foreground": "#ff0000"
+        }
+      },
+      {
+        "scope": "invalid.illegal",
+        "settings": {
+          "foreground": "#ff0000",
+          "fontStyle": "bold"
+        }
+      }
+    ]
+  }
+}

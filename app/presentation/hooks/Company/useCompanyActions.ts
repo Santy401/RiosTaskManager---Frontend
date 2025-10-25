@@ -1,8 +1,17 @@
 import { Company, CreateCompanyData } from "@/app/domain/entities/Company";
 import { useLoading } from '@/app/presentation/hooks/useLoading'
 import { useCompanyBase } from "./useCompanyBase";
+import { DeleteCompanyResponse } from "./types";
 
-export const useCompanyActions = () => {
+interface UseCompanyActionsResult {
+    createCompany: (data: CreateCompanyData) => Promise<Company>;
+    deleteCompany: (companyId: string) => Promise<DeleteCompanyResponse>;
+    updateCompany: (params: { companyId: string; data: Partial<CreateCompanyData> }) => Promise<Company>;
+    submitCompany: (data: CreateCompanyData, editingCompany?: Company | null) => Promise<Company>;
+    isDeletingCompany: (companyId: string) => boolean;
+}
+
+export const useCompanyActions = (): UseCompanyActionsResult => {
     const { setLoading, setError } = useCompanyBase();
     const { addDeleting, removeDeleting, isDeleting } = useLoading();
 
@@ -53,7 +62,7 @@ export const useCompanyActions = () => {
         }
     }
 
-    const deleteCompany = async (companyId: string): Promise<any> => {
+    const deleteCompany = async (companyId: string): Promise<DeleteCompanyResponse> => {
         addDeleting(companyId);
         setLoading(true);
         setError(null);
@@ -145,5 +154,11 @@ export const useCompanyActions = () => {
         }
     };
 
-    return { createCompany, deleteCompany, updateCompany, submitCompany, isDeletingCompany: isDeleting };
-}
+    return { 
+        createCompany, 
+        deleteCompany, 
+        updateCompany, 
+        submitCompany, 
+        isDeletingCompany: isDeleting 
+    };
+};

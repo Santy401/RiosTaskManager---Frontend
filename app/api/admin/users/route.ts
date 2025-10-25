@@ -3,7 +3,13 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs'
 import { getRealUsers, createUsers } from '@/lib/users';
 
-export async function GET(request: Request) {
+interface DecodedToken {
+  role?: string;
+  userId?: string;
+  id?: string;
+}
+
+export async function GET(request: Request): Promise<NextResponse> {
 
   try {
     const cookies = request.headers.get('cookie');
@@ -15,7 +21,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (decoded.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
@@ -40,7 +46,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const cookies = request.headers.get('cookie');
@@ -52,7 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (!decoded.role || !['admin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos sofucientes' }, { status: 403 })
@@ -97,16 +103,4 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
-}
-
-export async function DELETE(request: Request) {
-  try {
-
-  } catch {
-
-  }
-}
-
-async function checkIfUserExists(email: string) {
-  // lógica para verificar en la base de datos
 }

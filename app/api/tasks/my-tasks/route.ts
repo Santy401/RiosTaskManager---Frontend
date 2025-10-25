@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = await verifyToken(req);
   if ('error' in auth) {
     return NextResponse.json(auth, { status: auth.status });
@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     });
     return NextResponse.json(tasks);
   } catch (error) {
+    console.log("error:", error)
     return NextResponse.json({ error: 'Error al obtener tareas' }, { status: 500 });
   }
 }

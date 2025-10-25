@@ -2,7 +2,11 @@ import { Company } from "@/app/domain/entities/Company";
 import { useCallback } from "react";
 import { useCompanyBase } from "./useCompanyBase";
 
-export const useCompanyQueries = () => {
+interface UseAreaQueriesResult {
+    getAllCompany: () => Promise<Company[]>;
+}
+
+export const useCompanyQueries = (): UseAreaQueriesResult => {
     const { setLoading, setError } = useCompanyBase();
 
     const getAllCompany = useCallback(async (): Promise<Company[]> => {

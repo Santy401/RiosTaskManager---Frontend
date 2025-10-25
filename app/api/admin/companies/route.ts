@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import jwt from 'jsonwebtoken'
-import { getAllCompany, createCompany, deleteCompany } from "@/lib/company";
+import { getAllCompany, createCompany } from "@/lib/company";
 
-export async function GET(request: Request) {
+interface DecodedToken {
+  role?: string;
+  userId?: string;
+  id?: string;
+}
+
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -13,7 +19,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (decoded.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
@@ -23,7 +29,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(companies);
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error en /api/admin/companies:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {
@@ -38,7 +44,7 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
@@ -49,7 +55,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(activeToken, process.env.JWT_SECRET!) as DecodedToken;
 
     if (decoded.role !== 'admin') {
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
@@ -93,7 +99,7 @@ export async function POST(request: Request) {
       company: newCompany
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error en POST /api/admin/companies:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {
