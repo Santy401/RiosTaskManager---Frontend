@@ -1,15 +1,19 @@
-export interface Task {
+interface Task {
     id: string;
     name: string;
     description: string;
-    status: string;
     dueDate: Date;
-    companyId: string;
-    areaId: string;
-    userId: string;
+    status: 'pendiente' | 'en_progreso' | 'terminada';
     createdAt: Date;
     updatedAt: Date;
+    companyId?: string;
+    company?: { id: string; name: string };
+    areaId?: string;
+    area?: { id: string; name: string };
+    userId?: string;
+    user?: { id: string; name: string; email: string };
 }
+
 
 export interface CreateTaskData {
     name: string;

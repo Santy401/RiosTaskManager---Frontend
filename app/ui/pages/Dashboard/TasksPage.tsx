@@ -8,7 +8,7 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { ChevronLeft, ChevronRight, Calendar, User, Building2, MapPin, Loader2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, User, Building2, MapPin, Loader2, AlertCircle, RefreshCw } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateTaskForm } from "../../components/ModalComponents/createTask"
 import { useTask } from "@/app/presentation/hooks/Task/useTask"
@@ -23,19 +23,12 @@ interface Task {
   status: 'pendiente' | 'en_progreso' | 'terminada';
   createdAt: Date;
   updatedAt: Date;
-  company: {
-    id: string;
-    name: string;
-  };
-  area: {
-    id: string;
-    name: string;
-  };
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  companyId?: string;
+  company?: { id: string; name: string };
+  areaId?: string;
+  area?: { id: string; name: string };
+  userId?: string;
+  user?: { id: string; name: string; email: string };
 }
 
 interface ContextMenuState {
@@ -74,40 +67,83 @@ export function TasksPage(): JSX.Element {
   })
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [initialLoad, setInitialLoad] = useState(true)
 
   const [lastTap, setLastTap] = useState(0)
   const itemsPerPage = 10
 
   const { getAllTasks, isLoading, createTask, deleteTask, updateTask, isDeletingTask } = useTask();
 
-  // Función para cargar tareas con casting de tipo
-  const fetchTasks = useCallback(async (): Promise<Task[]> => {
+  // Función mejorada para cargar tareas
+  const fetchTasks = useCallback(async (showLoading = false): Promise<Task[]> => {
+    if (showLoading) {
+      setIsRefreshing(true);
+    }
+    setLoadError(null);
+
     try {
+      console.log('🔍 Iniciando carga de tareas...');
       const taskData = await getAllTasks();
-      // Casting para asegurar el tipo correcto
-      return taskData as unknown as Task[];
+      console.log('✅ Tareas cargadas:', taskData);
+
+      // Validación más robusta del tipo de datos
+      if (!Array.isArray(taskData)) {
+        console.error('❌ Los datos recibidos no son un array:', taskData);
+        throw new Error('Formato de datos inválido del servidor');
+      }
+
+      // Mapeo seguro de datos
+      const mappedTasks = taskData.map((task): Task => ({
+        id: task.id || '',
+        name: task.name || 'Sin nombre',
+        description: task.description || '',
+        dueDate: task.dueDate ? new Date(task.dueDate) : new Date(),
+        status: task.status as "pendiente" | "en_progreso" | "terminada",
+        createdAt: task.createdAt ? new Date(task.createdAt) : new Date(),
+        updatedAt: task.updatedAt ? new Date(task.updatedAt) : new Date(),
+        company: {
+          id: task.company?.id || '',
+          name: task.company?.name || 'Sin empresa',
+        },
+        area: {
+          id: task.area?.id || '',
+          name: task.area?.name || 'Sin área',
+        },
+        user: {
+          id: task.user?.id || '',
+          name: task.user?.name || 'Sin asignar',
+          email: task.user?.email || '',
+        },
+      }));
+
+      return mappedTasks;
     } catch (error) {
-      console.log(error)
+      console.error('❌ Error cargando tareas:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar tareas';
+      setLoadError(errorMessage);
       return [];
+    } finally {
+      if (showLoading) {
+        setIsRefreshing(false);
+      }
+      setInitialLoad(false);
     }
   }, [getAllTasks])
 
-  // useEffect para carga inicial
+  const hasFetched = useRef(false);
+
   useEffect(() => {
-    let isMounted = true;
+    if (hasFetched.current) return;
+    hasFetched.current = true;
 
     const loadData = async (): Promise<void> => {
       const taskData = await fetchTasks();
-      if (isMounted) {
-        setTasks(taskData);
-      }
+      setTasks(taskData);
     };
 
-    loadData();
-
-    return () => {
-      isMounted = false;
-    };
+    void loadData();
   }, [fetchTasks]);
 
   // Cerrar menú al hacer click fuera
@@ -124,7 +160,7 @@ export function TasksPage(): JSX.Element {
 
   // Función para recargar tareas manualmente
   const loadTasks = useCallback(async (): Promise<void> => {
-    const taskData = await fetchTasks();
+    const taskData = await fetchTasks(true);
     setTasks(taskData);
   }, [fetchTasks]);
 
@@ -163,7 +199,7 @@ export function TasksPage(): JSX.Element {
           alert(`Ver detalles de: ${itemName}`)
           break
 
-        case 'edit':
+        case 'edit': {
           const taskToEdit = tasks.find(task => task.id === itemId)
           if (taskToEdit) {
             setEditingTask(taskToEdit)
@@ -171,12 +207,16 @@ export function TasksPage(): JSX.Element {
             setIsModalOpen(true)
           }
           break
+        }
 
         case 'delete':
           if (confirm(`¿Estás seguro de que quieres eliminar la tarea "${itemName}"?`)) {
             await deleteTask(itemId)
             await loadTasks()
           }
+          break
+
+        default:
           break
       }
     } catch {
@@ -216,9 +256,9 @@ export function TasksPage(): JSX.Element {
   const filteredTasks = tasks.filter(task =>
     task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.area.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.user.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    task.company?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    task.area?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    task.user?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   ).filter(task =>
     filterStatus === "all" || task.status === filterStatus
   )
@@ -230,13 +270,13 @@ export function TasksPage(): JSX.Element {
   const getStatusBadgeVariant = (status: string): { variant: "default" | "secondary"; className: string } => {
     switch (status) {
       case 'terminada':
-        return { variant: "default" as const, className: "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 cursor-pointer" }
+        return { variant: "default", className: "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 cursor-pointer" }
       case 'en_progreso':
-        return { variant: "default" as const, className: "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 cursor-pointer" }
+        return { variant: "default", className: "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 cursor-pointer" }
       case 'pendiente':
-        return { variant: "secondary" as const, className: "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 cursor-pointer" }
+        return { variant: "secondary", className: "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 cursor-pointer" }
       default:
-        return { variant: "secondary" as const, className: "" }
+        return { variant: "secondary", className: "" }
     }
   }
 
@@ -270,7 +310,7 @@ export function TasksPage(): JSX.Element {
     setIsModalOpen(false)
     setEditingTask(null)
     setIsEditMode(false)
-    loadTasks()
+    void loadTasks()
   }
 
   const handleAddTaskClick = (): void => {
@@ -281,15 +321,54 @@ export function TasksPage(): JSX.Element {
 
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
+  // Mostrar spinner de carga inicial
+  if (initialLoad) {
+    return (
+      <div className="w-full p-6 flex justify-center items-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-lg text-foreground">Cargando tareas...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full p-6 space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold text-foreground">Tareas</h1>
-        <p className="text-sm text-muted-foreground">
-          {filteredTasks.length} tareas registradas
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-foreground">Tareas</h1>
+            <p className="text-sm text-muted-foreground">
+              {filteredTasks.length} tareas registradas
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => void loadTasks()}
+            disabled={isLoading || isRefreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
+
+      {/* Mensaje de error */}
+      {loadError && (
+        <div className="bg-destructive/15 border border-destructive/50 text-destructive-foreground p-4 rounded-lg flex items-center gap-3">
+          <AlertCircle className="h-5 w-5" />
+          <div className="flex-1">
+            <p className="font-medium">Error al cargar tareas</p>
+            <p className="text-sm opacity-90">{loadError}</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => void loadTasks()}>
+            Reintentar
+          </Button>
+        </div>
+      )}
 
       {/* Controls */}
       <div className="flex items-center justify-between gap-4">
@@ -299,8 +378,9 @@ export function TasksPage(): JSX.Element {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-md bg-secondary/50 border-border text-white"
+            disabled={isLoading || isRefreshing}
           />
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <Select value={filterStatus} onValueChange={setFilterStatus} disabled={isLoading || isRefreshing}>
             <SelectTrigger className="w-[180px] bg-secondary/50 border-border text-white">
               <SelectValue placeholder="Filtrar por estado" />
             </SelectTrigger>
@@ -312,16 +392,23 @@ export function TasksPage(): JSX.Element {
             </SelectContent>
           </Select>
           <div className="flex items-center gap-2">
-            <Switch className="data-[state=checked]:bg-emerald-500" />
+            <Switch className="data-[state=checked]:bg-emerald-500" disabled={isLoading || isRefreshing} />
             <span className="text-sm text-foreground">Mostrar solo activas</span>
           </div>
         </div>
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={handleAddTaskClick}
-          disabled={isLoading}
+          disabled={isLoading || isRefreshing}
         >
-          {isLoading ? "Cargando..." : "Agregar Tarea"}
+          {(isLoading || isRefreshing) ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Cargando...
+            </>
+          ) : (
+            "Agregar Tarea"
+          )}
         </Button>
       </div>
 
@@ -390,7 +477,7 @@ export function TasksPage(): JSX.Element {
                               <Building2 className="h-3 w-3" />
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-[#7a7a7a]">{task.company.name}</span>
+                          <span className="text-sm text-[#7a7a7a]">{task.company?.name || 'Sin empresa'}</span>
                         </div>
                       )}
                     </TableCell>
@@ -409,7 +496,7 @@ export function TasksPage(): JSX.Element {
                               <MapPin className="h-3 w-3" />
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-[#7a7a7a]">{task.area.name}</span>
+                          <span className="text-sm text-[#7a7a7a]">{task.area?.name || 'Sin área'}</span>
                         </div>
                       )}
                     </TableCell>
@@ -431,8 +518,8 @@ export function TasksPage(): JSX.Element {
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
-                            <span className="text-sm text-[#858585]">{task.user.name || 'Sin asignar'}</span>
-                            <span className="text-xs text-muted-foreground">{task.user.email}</span>
+                            <span className="text-sm text-[#858585]">{task.user?.name || 'Sin asignar'}</span>
+                            <span className="text-xs text-muted-foreground">{task.user?.email || ''}</span>
                           </div>
                         </div>
                       )}
@@ -485,6 +572,7 @@ export function TasksPage(): JSX.Element {
                       variant="outline"
                       className="mt-4"
                       onClick={handleAddTaskClick}
+                      disabled={isLoading || isRefreshing}
                     >
                       Crear primera tarea
                     </Button>
@@ -508,15 +596,18 @@ export function TasksPage(): JSX.Element {
         />
       </div>
 
-      {/* Estados de carga */}
-      {isLoading && (
-        <div className="flex justify-center items-center p-8">
-          <div className="text-foreground">Cargando tareas...</div>
+      {/* Estados de carga durante refresh */}
+      {(isLoading || isRefreshing) && !initialLoad && (
+        <div className="flex justify-center items-center p-4">
+          <div className="flex items-center gap-3 text-foreground">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <span>{isRefreshing ? 'Actualizando tareas...' : 'Cargando tareas...'}</span>
+          </div>
         </div>
       )}
 
       {/* Pagination - Solo se muestra si hay tareas */}
-      {hasTasks && (
+      {hasTasks && !isLoading && !isRefreshing && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Select defaultValue="10">
