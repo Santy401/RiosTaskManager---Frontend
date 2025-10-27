@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/ui/components/StyledComponents/card"
 import { Badge } from "@/app/ui/components/StyledComponents/badge"
@@ -23,16 +23,18 @@ interface Task {
   }
 }
 
+interface User {
+  name?: string
+  email: string
+  role: string
+}
+
 export default function UserTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
 
-  useEffect(() => {
-    loadUserTasks()
-  }, [])
-
-  const loadUserTasks = async () => {
+  const loadUserTasks = useCallback(async () => {
     try {
       // Get user info from token
       const token = document.cookie.split(';').find(c => c.trim().startsWith('auth-token='))
@@ -53,7 +55,11 @@ export default function UserTasksPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void loadUserTasks()
+  }, [loadUserTasks])
 
   const markTaskCompleted = async (taskId: string) => {
     try {
@@ -70,7 +76,7 @@ export default function UserTasksPage() {
         setTasks(prevTasks =>
           prevTasks.map(task =>
             task.id === taskId
-              ? { ...task, status: 'terminada' as const }
+              ? { ...task, status: 'terminada' }
               : task
           )
         )
@@ -167,7 +173,7 @@ export default function UserTasksPage() {
                   </div>
                   {task.status !== 'terminada' && (
                     <Button
-                      onClick={() => markTaskCompleted(task.id)}
+                      onClick={() => void markTaskCompleted(task.id)}
                       className="bg-green-600 hover:bg-green-700"
                       size="sm"
                     >

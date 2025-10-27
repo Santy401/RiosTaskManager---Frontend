@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/ui/components/StyledComponents/avatar"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
@@ -8,7 +8,7 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, MapPin, EllipsisVertical, Loader2, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, MapPin, Loader2 } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateAreaForm } from "../../components/ModalComponents/createArea"
 import { useArea } from "@/app/presentation/hooks/Area/useArea"
@@ -23,13 +23,29 @@ interface Area {
   updatedAt: Date;
 }
 
+// Interface para los datos del formulario (como los recibe el componente)
+interface CreateAreaFormData {
+  name: string;
+  state: 'activo' | 'inactivo';
+}
+
+// Interface para los datos que espera la API (basado en el error - usa 'state' como boolean)
+interface CreateAreaData {
+  name: string;
+  state: boolean; // La API espera un booleano llamado 'state'
+}
+
+interface UpdateAreaData {
+  name?: string;
+  state?: boolean;
+}
+
 export function AreaList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterEstado, setFilterEstado] = useState<string>("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [areas, setAreas] = useState<Area[]>([])
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [editingArea, setEditingArea] = useState<Area | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const itemsPerPage = 10
@@ -44,11 +60,7 @@ export function AreaList() {
     contextMenuRef
   } = useContextMenu()
 
-  useEffect(() => {
-    loadAreas()
-  }, [])
-
-  const loadAreas = async () => {
+  const loadAreas = useCallback(async () => {
     try {
       console.log('🔄 [COMPONENT] Cargando áreas...');
       const areasData = await getAllAreas();
@@ -57,7 +69,27 @@ export function AreaList() {
     } catch (error) {
       console.error('❌ [COMPONENT] Error al cargar áreas:', error)
     }
-  }
+  }, [getAllAreas])
+
+  useEffect(() => {
+    void loadAreas()
+  }, [loadAreas])
+
+  // Función para convertir datos del formulario a datos de la API
+  const convertToApiData = (formData: CreateAreaFormData): CreateAreaData => {
+    return {
+      name: formData.name,
+      state: formData.state === 'activo' // Convierte 'activo'/'inactivo' a true/false
+    };
+  };
+
+  // Función para convertir datos de actualización
+  const convertToUpdateData = (formData: CreateAreaFormData): UpdateAreaData => {
+    return {
+      name: formData.name,
+      state: formData.state === 'activo'
+    };
+  };
 
   // Filtrar áreas basado en búsqueda y filtros
   const filteredAreas = areas.filter(area =>
@@ -69,13 +101,13 @@ export function AreaList() {
   // Verificar si hay áreas para mostrar
   const hasAreas = filteredAreas.length > 0
 
-  const handleMenuAction = async (action: string, areaId: string, areaName: string) => {
+  const handleMenuAction = async (action: string, areaId: string, areaName: string): Promise<void> => {
     try {
       switch (action) {
         case 'view':
           console.log('👁️ Ver área:', areaId)
           break
-        case 'edit':
+        case 'edit': {
           console.log('✏️ Editar área:', areaId)
           // Encuentra el área a editar
           const areaToEdit = areas.find(area => area.id === areaId)
@@ -85,11 +117,14 @@ export function AreaList() {
             setIsModalOpen(true)
           }
           break
+        }
         case 'delete':
           if (confirm(`¿Eliminar el Área "${areaName}"?`)) {
             await deleteArea(areaId)
             await loadAreas()
           }
+          break
+        default:
           break
       }
     } catch (error) {
@@ -99,26 +134,34 @@ export function AreaList() {
     }
   }
 
-  const handleCreateArea = async (areaData: any) => {
+  const handleCreateArea = async (formData: CreateAreaFormData): Promise<void> => {
     try {
       if (isEditMode && editingArea) {
-        // Modo edición - ahora pasas un objeto con areaId y data
-        await updateArea({ areaId: editingArea.id, data: areaData })
+        // Modo edición - convertir datos para update
+        const updateData = convertToUpdateData(formData);
+        await updateArea({ areaId: editingArea.id, data: updateData })
       } else {
-        // Modo creación
-        await createArea(areaData)
+        // Modo creación - convertir datos para create
+        const createData = convertToApiData(formData);
+        await createArea(createData)
       }
     } catch (error) {
       console.error('Error creando área:', error)
-      throw error // Esto será capturado por el formulario
+      throw error
     }
   }
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = (): void => {
     // Cerrar el modal después del éxito
     setIsModalOpen(false)
     // Recargar las áreas si es necesario
-    loadAreas()
+    void loadAreas()
+  }
+
+  const handleAddAreaClick = (): void => {
+    setEditingArea(null)
+    setIsEditMode(false)
+    setIsModalOpen(true)
   }
 
   return (
@@ -157,11 +200,7 @@ export function AreaList() {
         </div>
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90"
-          onClick={() => {
-            setEditingArea(null)
-            setIsEditMode(false)
-            setIsModalOpen(true)
-          }}
+          onClick={handleAddAreaClick}
           disabled={isLoading}
         >
           {isLoading ? "Cargando..." : "Agregar Área"}
@@ -202,7 +241,7 @@ export function AreaList() {
                         </div>
                       ) : (
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={undefined} />
+                          <AvatarImage src="" alt={`Icono de ${area.name}`} />
                           <AvatarFallback className="bg-blue-500/20 text-blue-400 text-xs">
                             <MapPin className="h-4 w-4" />
                           </AvatarFallback>
@@ -254,7 +293,7 @@ export function AreaList() {
                     <Button
                       variant="outline"
                       className="mt-4"
-                      onClick={() => setIsModalOpen(true)}
+                      onClick={handleAddAreaClick}
                     >
                       Crear primera área
                     </Button>
