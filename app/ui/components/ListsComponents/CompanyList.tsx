@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/ui/components/StyledComponents/avatar"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
@@ -8,14 +8,34 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, Building2, EllipsisVertical, Eye, EyeOff, Loader2, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Building2, Eye, EyeOff, Loader2 } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
 import { CreateCompanyForm } from "../../components/ModalComponents/createCompany"
 import { useCompany } from "@/app/presentation/hooks/Company/useCompany"
 import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu'
 import { ContextMenu } from '@/app/ui/components/ListsComponents/ActionsMenu/ContextMenu'
 
-interface Company {
+// Interface para los datos del formulario (sin fechas)
+interface CompanyFormData {
+  name: string;
+  tipo: string;
+  nit: string;
+  cedula: string;
+  dian: string;
+  firma: string;
+  softwareContable: string;
+  usuario: string;
+  servidorCorreo: string;
+  email: string;
+  claveCorreo: string;
+  claveCC: string;
+  claveSS: string;
+  claveICA: string;
+  contraseña: string;
+}
+
+// Interface para la empresa que viene de la API (con fechas como string)
+interface CompanyFromAPI {
   id: string;
   name: string;
   tipo: string;
@@ -36,20 +56,41 @@ interface Company {
   updatedAt: string;
 }
 
+// Interface para el formulario de edición (con fechas como Date)
+interface CompanyForForm {
+  id: string;
+  name: string;
+  tipo: string;
+  nit: string;
+  cedula: string;
+  dian: string;
+  firma: string;
+  softwareContable: string;
+  usuario: string;
+  servidorCorreo: string;
+  email: string;
+  claveCorreo: string;
+  claveCC: string;
+  claveSS: string;
+  claveICA: string;
+  contraseña: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export function CompanyList() {
   const [searchQuery, setSearchQuery] = useState("")
   const [markCompanies, setMarkCompanies] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [companies, setCompanies] = useState<CompanyFromAPI[]>([])
   const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({})
-  const [editingCompany, setEditingCompany] = useState<Company | null>(null)
+  const [editingCompany, setEditingCompany] = useState<CompanyForForm | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [showAllPasswords, setShowAllPasswords] = useState(false)
   const itemsPerPage = 10
 
-  const { getAllCompany, isLoading, createCompany, deleteCompany, updateCompany, isDeletingCompany } = useCompany();
+  const { getAllCompany, createCompany, deleteCompany, updateCompany, isDeletingCompany } = useCompany();
   const {
     contextMenu,
     handleDoubleClick,
@@ -59,11 +100,8 @@ export function CompanyList() {
     contextMenuRef
   } = useContextMenu()
 
-  useEffect(() => {
-    loadCompanies()
-  }, [])
-
-  const loadCompanies = async () => {
+  
+  const loadCompanies = useCallback(async () => {
     try {
       console.log('🔄 [COMPONENT] Cargando empresas...');
       const companyData = await getAllCompany();
@@ -72,7 +110,11 @@ export function CompanyList() {
     } catch (error) {
       console.error('❌ [COMPONENT] Error al cargar empresas:', error)
     }
-  }
+  }, [getAllCompany]);
+
+  useEffect(() => {
+    loadCompanies()
+  }, [loadCompanies])
 
   const hasCompanies = companies.length > 0
 
@@ -96,6 +138,7 @@ export function CompanyList() {
         year: 'numeric'
       })
     } catch (error) {
+      console.log(error)
       return 'Fecha inválida'
     }
   }
@@ -127,7 +170,7 @@ export function CompanyList() {
     setShowAllPasswords(newShowAllState)
 
     if (newShowAllState) {
-      setShowPasswords(prev => {
+      setShowPasswords(() => {
         const newState: { [key: string]: boolean } = {}
         companies.forEach(company => {
           newState[company.id] = true
@@ -135,13 +178,22 @@ export function CompanyList() {
         return newState
       })
     } else {
-      setShowPasswords(prev => {
+      setShowPasswords(() => {
         const newState: { [key: string]: boolean } = {}
         companies.forEach(company => {
           newState[company.id] = false
         })
         return newState
       })
+    }
+  }
+
+  // Función para convertir CompanyFromAPI a CompanyForForm
+  const convertToFormType = (company: CompanyFromAPI): CompanyForForm => {
+    return {
+      ...company,
+      createdAt: new Date(company.createdAt),
+      updatedAt: new Date(company.updatedAt)
     }
   }
 
@@ -153,10 +205,10 @@ export function CompanyList() {
           break
         case 'edit':
           console.log('✏️ Editar empresa:', companyId)
-          // Encuentra la empresa a editar
           const companyToEdit = companies.find(company => company.id === companyId)
           if (companyToEdit) {
-            setEditingCompany(companyToEdit)
+            const companyForForm = convertToFormType(companyToEdit)
+            setEditingCompany(companyForForm)
             setIsEditMode(true)
             setIsModalOpen(true)
           }
@@ -175,13 +227,11 @@ export function CompanyList() {
     }
   }
 
-  const handleCreateCompany = async (companyData: any) => {
+  const handleCreateCompany = async (companyData: CompanyFormData) => {
     try {
       if (isEditMode && editingCompany) {
-        // Modo edición
         await updateCompany({ companyId: editingCompany.id, data: companyData })
       } else {
-        // Modo creación
         await createCompany(companyData)
       }
     } catch (error) {
@@ -570,7 +620,7 @@ export function CompanyList() {
             setIsEditMode(false)
           }}
           onSuccess={handleCreateSuccess}
-          editingCompany={editingCompany} // ← Agrega esta prop
+          editingCompany={editingCompany}
         />
       </SlideModal>
     </div>

@@ -1,18 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/ui/components/StyledComponents/avatar"
+import { useState, useEffect, useCallback } from "react"
+import { Avatar, AvatarFallback } from "@/app/ui/components/StyledComponents/avatar"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
 import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, EllipsisVertical, User } from "lucide-react"
+import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, User } from "lucide-react"
 import { SlideModal } from "../../ModalComponents/slideModal"
 import { AddUserForm } from "../../ModalComponents/createUser"
 import { useUser } from "@/app/presentation/hooks/User/useUser"
-import UserActionsMenu from "./UserActionsMenu"
 import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu';
 import { ContextMenu } from "../ActionsMenu/ContextMenu"
 
@@ -33,8 +32,6 @@ export function UsersTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null)
 
   const { getAllUsers, isLoading, deleteUser, error } = useUser()
   const {
@@ -44,11 +41,7 @@ export function UsersTable() {
     contextMenuRef
   } = useContextMenu()
 
-  useEffect(() => {
-    loadUsers()
-  }, [])
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       console.log('📋 [TABLE] Cargando usuarios...');
       const usersData = await getAllUsers();
@@ -57,7 +50,11 @@ export function UsersTable() {
     } catch (err) {
       console.error('💥 [TABLE] Error cargando usuarios:', err);
     }
-  };
+  }, [getAllUsers]);
+
+  useEffect(() => {
+    loadUsers()
+  }, [loadUsers])
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -120,7 +117,7 @@ export function UsersTable() {
     return colors[index];
   };
 
-  const handleAddUser = async (userData: any) => {
+  const handleAddUser = async () => {
     try {
       // Esta función se ejecutará cuando el formulario tenga éxito
       await loadUsers() // Recargar la lista de usuarios
@@ -135,6 +132,12 @@ export function UsersTable() {
     // Recargar los usuarios
     loadUsers()
   }
+
+  // Paginación
+  const itemsPerPage = 10;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
   return (
     <div className="w-full p-6 space-y-6">
@@ -196,7 +199,7 @@ export function UsersTable() {
           </TableHeader>
           <TableBody>
             {hasUsers ? (
-              filteredUsers.map((user) => (
+              paginatedUsers.map((user) => (
                 <TableRow
                   key={user.id}
                   className="border-border hover:bg-secondary/30 cursor-context-menu"
@@ -277,16 +280,9 @@ export function UsersTable() {
       {hasUsers && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Select defaultValue="10">
-              <SelectTrigger className="w-[70px] bg-secondary/50 border-border text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
+            <span className="text-sm text-muted-foreground">
+              Mostrando {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredUsers.length)} de {filteredUsers.length} usuarios
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -294,25 +290,47 @@ export function UsersTable() {
               size="icon"
               className="h-8 w-8"
               onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
             >
               <ChevronLeft className="h-4 w-4 text-white" />
             </Button>
-            {[1, 2, 3, 4, 5].map((page) => (
-              <Button
-                key={page}
-                variant={currentPage === page ? "default" : "ghost"}
-                size="icon"
-                className={`h-8 w-8 ${currentPage === page ? "" : "text-white"}`}
-                onClick={() => setCurrentPage(page)}
-              >
-                {page}
-              </Button>
-            ))}
-            <span className="px-2 text-muted-foreground">...</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-white">
-              24
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(currentPage + 1)}>
+
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = i + 1
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "ghost"}
+                  size="icon"
+                  className={`h-8 w-8 ${currentPage === pageNum ? "" : "text-white"}`}
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              )
+            })}
+
+            {totalPages > 5 && (
+              <>
+                <span className="px-2 text-muted-foreground">...</span>
+                <Button
+                  variant={currentPage === totalPages ? "default" : "ghost"}
+                  size="icon"
+                  className={`h-8 w-8 ${currentPage === totalPages ? "" : "text-white"}`}
+                  onClick={() => setCurrentPage(totalPages)}
+                >
+                  {totalPages}
+                </Button>
+              </>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
               <ChevronRight className="h-4 w-4 text-white" />
             </Button>
           </div>
