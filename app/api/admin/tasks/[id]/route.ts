@@ -22,7 +22,7 @@ interface DecodedToken {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
@@ -40,7 +40,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
     }
 
-    const taskId = params.id;
+    const { id: taskId } = await params;
 
     if (!taskId) {
       return NextResponse.json({ error: 'ID de Tarea requerido' }, { status: 400 });
@@ -97,7 +97,7 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
@@ -113,7 +113,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No tienes permisos de administrador' }, { status: 403 });
     }
 
-    const taskId = params.id;
+    const { id: taskId } = await params;
 
     if (!taskId) {
       return NextResponse.json({ error: 'ID de Tarea requerido' }, { status: 400 });

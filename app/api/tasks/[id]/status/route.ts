@@ -11,7 +11,7 @@ interface DecodedToken {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
@@ -30,7 +30,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No tienes permisos para actualizar tareas' }, { status: 403 });
     }
 
-    const taskId = params.id;
+    const { id: taskId } = await params;
     const body = await request.json();
     const { status } = body;
 

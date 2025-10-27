@@ -10,9 +10,11 @@ interface DecodedToken {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const { id: areaId } = await params;
+    
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
     const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];
@@ -27,8 +29,6 @@ export async function DELETE(
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
     }
-
-    const areaId = params.id;
 
     if (!areaId) {
       return NextResponse.json({ error: 'ID de area requerido' }, { status: 400 });
@@ -85,9 +85,11 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    const { id: areaId } = await params;
+    
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
     const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];
@@ -102,8 +104,6 @@ export async function PUT(
     if (!decoded.role || !['admin', 'superadmin'].includes(decoded.role)) {
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
     }
-
-    const areaId = params.id;
 
     if (!areaId) {
       return NextResponse.json({ error: 'ID de área requerido' }, { status: 400 });

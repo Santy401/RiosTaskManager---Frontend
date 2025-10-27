@@ -11,6 +11,7 @@ interface DecodedToken {
 
 export async function GET(request: Request): Promise<NextResponse> {
   try {
+
     const cookies = request.headers.get('cookie');
     const token = cookies?.match(/token=([^;]+)/)?.[1];
     const authToken = cookies?.match(/auth-token=([^;]+)/)?.[1];

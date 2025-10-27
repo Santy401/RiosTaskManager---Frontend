@@ -10,7 +10,7 @@ interface DecodedToken {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
@@ -28,7 +28,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
     }
 
-    const userId = params.id;
+    const { id: userId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: 'ID de usuario requerido' }, { status: 400 });

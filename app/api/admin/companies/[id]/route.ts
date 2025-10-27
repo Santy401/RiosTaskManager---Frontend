@@ -20,7 +20,7 @@ interface CompanyUpdateData {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
@@ -38,7 +38,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
     }
 
-    const companyId = params.id;
+    const { id: companyId } = await params;
 
     if (!companyId) {
       return NextResponse.json({ error: 'ID de empresa requerido' }, { status: 400 });
@@ -101,7 +101,7 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     const cookies = request.headers.get('cookie');
@@ -119,7 +119,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Sin permisos suficientes' }, { status: 403 });
     }
 
-    const companyId = params.id;
+    const { id: companyId } = await params;
 
     if (!companyId) {
       return NextResponse.json({ error: 'ID de empresa requerido' }, { status: 400 });
