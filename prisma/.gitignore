@@ -1,0 +1,5 @@
+*.db
+*.db-journal
+.dev.db
+.prisma
+node_modules/
