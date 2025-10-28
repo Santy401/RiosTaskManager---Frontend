@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const protectedRoutes = ['/ui/pages/Dashboard', '/ui/pages/Dashboard/Admin', '/ui/pages/Dashboard/User', '/api/admin', '/api/user', '/'];
   const isLoggedIn = request.cookies.get('auth-token');
   const pathname = request.nextUrl.pathname;
