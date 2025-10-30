@@ -1,17 +1,5 @@
 import { useTaskBase } from './useTaskBase'
-
-interface Task {
-    id: string;
-    name: string;
-    description: string;
-    status: string;
-    dueDate: Date;
-    companyId: string;
-    areaId: string;
-    userId: string;
-    createdAt: Date;
-    updatedAt: Date;
-}
+import { Task } from './type';
 
 interface UseTaskQueriesResult {
     getAllTasks: () => Promise<Task[]>;
