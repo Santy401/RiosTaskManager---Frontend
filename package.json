@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "prisma generate && next build --turbopack",
     "build:with-migrate": "next build --turbopack",
     "start": "next start",
     "db:seed": "tsx prisma/seed.ts",
@@ -12,7 +12,8 @@
     "lint:strict": "next lint --max-warnings=0",
     "lint:fix": "next lint --fix",
     "build:strict": "npm run lint:strict && next build",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
