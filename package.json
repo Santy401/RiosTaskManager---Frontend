@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "prisma generate && next dev --turbopack",
+    "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "build:with-migrate": "prisma generate && prisma migrate deploy && next build --turbopack",
+    "build:with-migrate": "next build --turbopack",
     "start": "next start",
     "db:seed": "tsx prisma/seed.ts",
     "lint": "next lint",
