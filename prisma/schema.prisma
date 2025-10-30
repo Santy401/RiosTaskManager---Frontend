@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,60 +7,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  password  String?
-  role      String?
-  tasks     Task[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model areas {
+  id_area      Int        @id @default(autoincrement())
+  nombre_area  String     @db.VarChar(255)
+  descripcion  String?
+  departamento String     @db.VarChar(255)
+  id_empresa   Int?
+  status       String?    @default("active") @db.VarChar(255)
+  createdAt    DateTime   @db.Timestamptz(6)
+  updatedAt    DateTime   @db.Timestamptz(6)
+  companies    companies? @relation(fields: [id_empresa], references: [id])
+  tasks        tasks[]
 }
 
-model Company {
-  id        String   @id @default(cuid())
-  name      String   // NOMBRE
-  tipo      String   // TIPO
-  nit       String   // NIT
-  cedula    String?  // CEDULA
-  dian      String   // CLAVE DIAN (was claveDian, but keeping dian for compatibility)
-  firma     String   // FIRMA ELEC (was firmaElec, but keeping firma for compatibility)
-  softwareContable String? // SOFTWARE CONTABLE
-  usuario   String   // USUARIO
-  contraseña String  // CLAVE SOFTWARE (was claveSoftware, but keeping contraseña for compatibility)
-  servidorCorreo String // Servidor de correo
-  email     String   // E-MAIL
-  claveCorreo String? // CLAVE CORREO
-  claveCC   String?  // CLAVE CC
-  claveSS   String?  // CLAVE SS
-  claveICA  String?  // CLAVE ICA
-  tasks     Task[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model companies {
+  id                 BigInt   @id @default(autoincrement())
+  name               String?  @db.VarChar(255)
+  nit                String?  @unique @db.VarChar(255)
+  email              String?  @db.VarChar(255)
+  cellphone          String?  @db.VarChar(255)
+  dian               String?  @db.VarChar(255)
+  legalSignature     String?  @db.VarChar(255)
+  accountingSoftware String?  @db.VarChar(255)
+  user               String?  @db.VarChar(255)
+  password           String?  @db.VarChar(255)
+  mailServer         String?  @db.VarChar(255)
+  companyType        String?  @default("A") @db.VarChar(255)
+  status             String?  @default("active") @db.VarChar(255)
+  createdAt          DateTime @db.Timestamptz(6)
+  updatedAt          DateTime @db.Timestamptz(6)
+  tipo               String?  @db.VarChar(255)
+  cedula             String?  @db.VarChar(255)
+  firma              String?  @db.VarChar(255)
+  softwareContable   String?  @db.VarChar(255)
+  usuario            String?  @db.VarChar(255)
+  contrase_a         String?  @map("contraseña") @db.VarChar(255)
+  servidorCorreo     String?  @db.VarChar(255)
+  claveCorreo        String?  @db.VarChar(255)
+  claveCC            String?  @db.VarChar(255)
+  claveSS            String?  @db.VarChar(255)
+  claveICA           String?  @db.VarChar(255)
+  areas              areas[]
+  tasks              tasks[]
 }
 
-model Area {
-  id        String   @id @default(cuid())
-  name      String
-  tasks     Task[]
-  state     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model tasks {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  observation String?
+  assigned_to Int
+  company_id  Int
+  area_id     Int
+  due_date    DateTime  @db.Date
+  status      String?   @default("in_progress") @db.VarChar(255)
+  created_at  DateTime  @db.Timestamptz(6)
+  updated_at  DateTime  @db.Timestamptz(6)
+  areas       areas     @relation(fields: [area_id], references: [id_area], onDelete: NoAction)
+  users       users     @relation(fields: [assigned_to], references: [id], onDelete: NoAction)
+  companies   companies @relation(fields: [company_id], references: [id], onDelete: NoAction)
 }
 
-model Task {
-  id        String   @id @default(cuid())
-  name      String
-  description String
-  companyId String
-  areaId    String
-  userId    String
-  dueDate   DateTime
-  status    String
-  company   Company  @relation(fields: [companyId], references: [id])
-  area      Area     @relation(fields: [areaId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model users {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  role      String?  @default("user") @db.VarChar(255)
+  protected Boolean? @default(false)
+  tasks     tasks[]
 }
