@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
 export async function verifyToken(req: NextRequest) {
-  const token = req.cookies.get('token')?.value;
+  // Usar SOLO auth-token
+  const token = req.cookies.get('auth-token')?.value;
+  
+  console.log('🔐 Cookie auth-token encontrada:', !!token);
+  console.log('🔐 Token:', token ? `${token.substring(0, 20)}...` : 'NO HAY TOKEN');
+  
   if (!token) {
     return { error: 'No autorizado', status: 401 };
   }
@@ -10,21 +15,24 @@ export async function verifyToken(req: NextRequest) {
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret');
     const { payload } = await jwtVerify(token, secret);
-    return { user: payload };
-  } catch {
+    
+    const userPayload = payload as any;
+    
+    if (!userPayload.id || !userPayload.email || !userPayload.role) {
+      return { error: 'Token inválido: faltan propiedades', status: 401 };
+    }
+    
+    console.log('✅ Usuario verificado:', userPayload.email, userPayload.role);
+    return { 
+      user: {
+        id: String(userPayload.id),
+        email: String(userPayload.email),
+        name: userPayload.name ? String(userPayload.name) : undefined,
+        role: String(userPayload.role)
+      }
+    };
+  } catch (error) {
+    console.error('❌ Error verificando token:', error);
     return { error: 'Token inválido', status: 401 };
   }
-}
-
-export async function requireRole(role: string) {
-  return async (req: NextRequest) => {
-    const auth = await verifyToken(req);
-    if ('error' in auth) return NextResponse.json(auth, { status: auth.status });
-
-    if (auth.user.role !== role) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
-
-    return null;
-  };
 }
