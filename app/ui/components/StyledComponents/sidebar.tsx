@@ -5,25 +5,24 @@ import { Slot } from '@radix-ui/react-slot'
 import { cva, VariantProps } from 'class-variance-authority'
 import { PanelLeftIcon } from 'lucide-react'
 
-import { useIsMobile } from '@/hooks/use-mobile'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
+import { cn } from '@/app/lib/utils'
+import { Button } from '@/app/ui/components/StyledComponents/button'
+import { Input } from '@/app/ui/components/StyledComponents/input'
+import { Separator } from '@/app/ui/components/StyledComponents/separator'
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet'
-import { Skeleton } from '@/components/ui/skeleton'
+} from '@/app/ui/components/StyledComponents/sheet'
+import { Skeleton } from '@/app/ui/components/StyledComponents/skeleton'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@/app/ui/components/StyledComponents/tooltip'
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state'
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -66,7 +65,6 @@ function SidebarProvider({
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }) {
-  const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
 
   // This is the internal state of the sidebar.
@@ -88,42 +86,48 @@ function SidebarProvider({
     [setOpenProp, open],
   )
 
-  // Helper to toggle the sidebar.
-  const toggleSidebar = React.useCallback(() => {
-    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-  }, [isMobile, setOpen, setOpenMobile])
+  // Helper to check if we're on mobile
+  const [isMobile, setIsMobile] = React.useState(false)
 
-  // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
-        (event.metaKey || event.ctrlKey)
-      ) {
-        event.preventDefault()
-        toggleSidebar()
-      }
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768) // md breakpoint
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggleSidebar])
+    // Check initially
+    checkMobile()
+
+    // Add event listener
+    window.addEventListener('resize', checkMobile)
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? 'expanded' : 'collapsed'
 
+  // Toggle sidebar function
+  const toggleSidebar = React.useCallback(() => {
+    if (isMobile) {
+      setOpenMobile(!openMobile)
+    } else {
+      setOpen(!open)
+    }
+  }, [isMobile, openMobile, open, setOpen, setOpenMobile])
+
   const contextValue = React.useMemo<SidebarContextProps>(
     () => ({
       state,
       open,
-      setOpen,
-      isMobile,
+      setOpen: (open: boolean) => setOpen(open), // Asegurar que sea (boolean) => void
       openMobile,
       setOpenMobile,
+      isMobile,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
+    [state, open, setOpen, openMobile, setOpenMobile, isMobile, toggleSidebar],
   )
 
   return (
@@ -569,7 +573,7 @@ function SidebarMenuAction({
         'peer-data-[size=lg]/menu-button:top-2.5',
         'group-data-[collapsible=icon]:hidden',
         showOnHover &&
-          'peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
+        'peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0',
         className,
       )}
       {...props}
