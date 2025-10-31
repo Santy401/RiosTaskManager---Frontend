@@ -12,7 +12,7 @@ model areas {
   nombre_area  String     @db.VarChar(255)
   descripcion  String?
   departamento String     @db.VarChar(255)
-  id_empresa   Int?
+  id_empresa   BigInt? 
   status       String?    @default("active") @db.VarChar(255)
   createdAt    DateTime   @db.Timestamptz(6)
   updatedAt    DateTime   @db.Timestamptz(6)
@@ -56,7 +56,7 @@ model tasks {
   title       String    @db.VarChar(255)
   observation String?
   assigned_to Int
-  company_id  Int
+  company_id  BigInt 
   area_id     Int
   due_date    DateTime  @db.Date
   status      String?   @default("in_progress") @db.VarChar(255)
