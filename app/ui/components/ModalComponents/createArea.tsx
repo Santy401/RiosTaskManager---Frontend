@@ -124,7 +124,7 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
         </div>
 
         {/* Estado */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="estado" className="text-sm font-medium text-foreground">
             Estado del Área
           </Label>
@@ -156,7 +156,7 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
           <p className="text-xs text-muted-foreground">
             Las áreas inactivas no estarán disponibles para asignación
           </p>
-        </div>
+        </div> */}
       </div>
 
       {/* Footer Actions */}

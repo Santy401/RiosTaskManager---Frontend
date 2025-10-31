@@ -214,7 +214,7 @@ export function AreaList() {
             <TableRow className="border-border hover:bg-transparent">
               <TableHead className="text-muted-foreground font-medium">Icono</TableHead>
               <TableHead className="text-muted-foreground font-medium">Nombre del Área</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Estado</TableHead>
+              {/* <TableHead className="text-muted-foreground font-medium">Estado</TableHead> */}
               <TableHead className="text-muted-foreground font-medium">Fecha Creación</TableHead>
             </TableRow>
           </TableHeader>
@@ -260,7 +260,7 @@ export function AreaList() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       {isDeleting ? (
                         <div className="h-6 flex items-center">
                           <span className="text-xs text-muted-foreground">-</span>
@@ -277,7 +277,7 @@ export function AreaList() {
                           {area.state === "activo" ? "Activo" : "Inactivo"}
                         </Badge>
                       )}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="text-muted-foreground">
                       {isDeleting ? '-' : new Date(area.createdAt).toLocaleDateString('es-ES')}
                     </TableCell>

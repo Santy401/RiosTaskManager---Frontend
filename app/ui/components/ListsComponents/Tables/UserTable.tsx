@@ -190,11 +190,11 @@ export function UsersTable() {
               <TableHead className="text-muted-foreground font-medium">Avatar</TableHead>
               <TableHead className="text-muted-foreground font-medium">Nombre</TableHead>
               <TableHead className="text-muted-foreground font-medium">Email</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Verificado</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Baneado</TableHead>
+              {/* <TableHead className="text-muted-foreground font-medium">Verificado</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Baneado</TableHead> */}
               <TableHead className="text-muted-foreground font-medium">Rol</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Creado</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Activo</TableHead>
+              {/* <TableHead className="text-muted-foreground font-medium">Creado</TableHead>
+              <TableHead className="text-muted-foreground font-medium">Activo</TableHead> */}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -214,7 +214,7 @@ export function UsersTable() {
                   </TableCell>
                   <TableCell className="font-medium text-foreground">{user.name}</TableCell>
                   <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     {user.verified ? (
                       <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                     ) : (
@@ -227,14 +227,14 @@ export function UsersTable() {
                     ) : (
                       <Circle className="h-5 w-5 text-muted-foreground" />
                     )}
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30">
                       {user.role}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{user.created || "N/A"}</TableCell>
-                  <TableCell className="text-muted-foreground">{user.lastActive || "N/A"}</TableCell>
+                  {/* <TableCell className="text-muted-foreground">{user.created || "N/A"}</TableCell>
+                  <TableCell className="text-muted-foreground">{user.lastActive || "N/A"}</TableCell> */}
                 </TableRow>
               ))
             ) : (

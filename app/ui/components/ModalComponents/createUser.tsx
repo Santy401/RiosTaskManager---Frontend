@@ -184,7 +184,7 @@ export function AddUserForm({ onSubmit, onCancel, onSuccess }: AddUserFormProps)
           </p>
         </div>
 
-        {/* Role Field */}
+   
         <div className="space-y-2">
           <Label htmlFor="role" className="text-sm font-medium text-foreground">
             Rol
@@ -204,8 +204,7 @@ export function AddUserForm({ onSubmit, onCancel, onSuccess }: AddUserFormProps)
           </Select>
         </div>
 
-        {/* Verified Toggle */}
-        <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/30 border border-border">
+        {/* <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/30 border border-border">
           <div className="space-y-0.5">
             <Label htmlFor="verified" className="text-sm font-medium text-foreground cursor-pointer">
               Cuenta Verificada
@@ -221,7 +220,6 @@ export function AddUserForm({ onSubmit, onCancel, onSuccess }: AddUserFormProps)
           />
         </div>
 
-        {/* Send Email Toggle */}
         <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/30 border border-border">
           <div className="space-y-0.5">
             <Label htmlFor="sendEmail" className="text-sm font-medium text-foreground cursor-pointer">
@@ -236,7 +234,7 @@ export function AddUserForm({ onSubmit, onCancel, onSuccess }: AddUserFormProps)
             className="data-[state=checked]:bg-emerald-500"
             disabled={isLoading || success}
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Footer */}
