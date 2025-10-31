@@ -86,7 +86,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const newArea = await prisma.area.create({
       data: {
         name: name.trim(),
-        state: state !== undefined ? state : true,
+        state: state === 'activo' || state === 'true' ? 'activo' : 'inactivo',
         createdAt: new Date(),
         updatedAt: new Date()
       }

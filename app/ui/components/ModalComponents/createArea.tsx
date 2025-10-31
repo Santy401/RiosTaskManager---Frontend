@@ -19,7 +19,7 @@ interface CreateAreaFormProps {
 export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaFormProps) {
   const [formData, setFormData] = useState({
     name: "",
-    state: "activo" as "activo" | "inactivo",
+    state: true,
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -38,8 +38,13 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
     setSuccess(false)
 
     try {
+      const submissionData = {
+        ...formData,
+        state: formData.state ? 'activo' : 'inactivo'
+      };
+
       // Ejecutar la función onSubmit (que debería ser async)
-      await onSubmit(formData)
+      await onSubmit(submissionData)
 
       // Mostrar estado de éxito
       setSuccess(true)
@@ -59,10 +64,18 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
     }
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    // Limpiar error cuando el usuario empiece a escribir
-    if (error) setError(null)
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData(prev => {
+      // Special handling for state field
+      if (field === 'state') {
+        return {
+          ...prev,
+          [field]: value === 'activo' || value === true
+        };
+      }
+      return { ...prev, [field]: value };
+    });
+    if (error) setError(null);
   }
 
   return (
@@ -116,8 +129,10 @@ export function CreateAreaForm({ onSubmit, onCancel, onSuccess }: CreateAreaForm
             Estado del Área
           </Label>
           <Select
-            value={formData.state}
-            onValueChange={(value: "activo" | "inactivo") => handleInputChange("state", value)}
+            value={formData.state ? "activo" : "inactivo"}
+            onValueChange={(value: "activo" | "inactivo") =>
+              handleInputChange("state", value === "activo")
+            }
             disabled={isLoading || success}
           >
             <SelectTrigger className="bg-secondary/50 border-border text-white">
