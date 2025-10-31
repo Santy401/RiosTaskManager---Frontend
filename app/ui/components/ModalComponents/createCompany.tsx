@@ -347,19 +347,14 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
           <Label htmlFor="dian" className="text-sm font-medium text-foreground">
             Estado DIAN
           </Label>
-          <Select
+          <Input
+            id="dian"
+            placeholder="Estado DIAN"
             value={formData.dian}
-            onValueChange={(value) => handleInputChange("dian", value)}
+            onChange={(e) => handleInputChange("dian", e.target.value)}
+            className="bg-secondary/50 border-border text-white"
             disabled={isLoading || success}
-          >
-            <SelectTrigger className="bg-secondary/50 border-border text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Activa">Activa</SelectItem>
-              <SelectItem value="Inactiva">Inactiva</SelectItem>
-            </SelectContent>
-          </Select>
+          />
         </div>
 
         {/* Firma Field */}
