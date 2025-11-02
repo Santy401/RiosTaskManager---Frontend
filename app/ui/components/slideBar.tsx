@@ -86,6 +86,7 @@ export const SlideBar = ({ isSelected, setIsSelected }: SidebarProps) => {
             <Image
               src='/favicon.ico'
               alt="Logo RiosBackend"
+              className="scale-300"
               width={30}
               height={30}
             />

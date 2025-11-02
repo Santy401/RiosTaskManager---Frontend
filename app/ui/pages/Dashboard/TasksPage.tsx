@@ -289,10 +289,9 @@ export function TasksPage(): JSX.Element {
     })
   }
 
-  // Verificar si la tarea está vencida
-  const isOverdue = (dueDate: Date): boolean => {
-    return new Date(dueDate) < new Date()
-  }
+const isOverdue = (dueDate: Date): boolean => {
+  return new Date(dueDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0);
+}
 
   const handleCreateTask = async (taskData: CreateTaskFormData): Promise<void> => {
     try {
@@ -543,16 +542,11 @@ export function TasksPage(): JSX.Element {
                           <span>-</span>
                         </div>
                       ) : (
-                        <div className={`flex items-center gap-2 ${isOverdue(task.dueDate) && task.status !== 'terminada' ? 'text-red-400' : 'text-muted-foreground'}`}>
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           <span className={isOverdue(task.dueDate) && task.status !== 'terminada' ? 'font-semibold' : ''}>
                             {formatDate(task.dueDate)}
                           </span>
-                          {isOverdue(task.dueDate) && task.status !== 'terminada' && (
-                            <Badge variant="destructive" className="text-xs">
-                              Vencida
-                            </Badge>
-                          )}
                         </div>
                       )}
                     </TableCell>

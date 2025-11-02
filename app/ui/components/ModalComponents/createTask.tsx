@@ -103,6 +103,9 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, editingTask }: C
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    console.log('📅 Fecha que se enviará:', formData.dueDate);
+    console.log('📅 Fecha parseada:', new Date(formData.dueDate));
+
     // Validaciones
     if (!formData.name.trim()) {
       setError("El nombre de la tarea es obligatorio")
@@ -126,16 +129,6 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, editingTask }: C
     }
     if (!formData.userId) {
       setError("Debe seleccionar un usuario responsable")
-      return
-    }
-
-    // Validar fecha futura
-    const selectedDate = new Date(formData.dueDate)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    if (selectedDate < today) {
-      setError("La fecha de vencimiento no puede ser en el pasado")
       return
     }
 
@@ -277,7 +270,7 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, editingTask }: C
             className="bg-secondary/50 border-border text-white"
             required
             disabled={isSubmitting || success}
-            min={new Date().toISOString().split('T')[0]} // No permitir fechas pasadas
+          // min={new Date().toISOString().split('T')[0]}
           />
         </div>
 

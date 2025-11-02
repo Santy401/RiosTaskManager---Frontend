@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
 import { ChevronLeft, ChevronRight, Building2, Eye, EyeOff, Loader2 } from "lucide-react"
 import { SlideModal } from "../../components/ModalComponents/slideModal"
+import { Toast, ToastProvider, ToastViewport } from "@/app/ui/components/StyledComponents/toast"
 import { CreateCompanyForm } from "../../components/ModalComponents/createCompany"
 import { useCompany } from "@/app/presentation/hooks/Company/useCompany"
 import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu'
@@ -83,12 +84,17 @@ export function CompanyList() {
   const [markCompanies, setMarkCompanies] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [customFilters, setCustomFilters] = useState<string[]>(['A', 'B', 'C'])
+  const [showAddFilter, setShowAddFilter] = useState(false)
+  const [newFilterName, setNewFilterName] = useState("")
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null)
   const [companies, setCompanies] = useState<CompanyFromAPI[]>([])
   const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({})
   const [editingCompany, setEditingCompany] = useState<CompanyForForm | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [showAllPasswords, setShowAllPasswords] = useState(false)
   const itemsPerPage = 10
+  const [showToast, setShowToast] = useState(false)
 
   const { getAllCompany, createCompany, deleteCompany, updateCompany, isDeletingCompany } = useCompany();
   const {
@@ -100,7 +106,7 @@ export function CompanyList() {
     contextMenuRef
   } = useContextMenu()
 
-  
+
   const loadCompanies = useCallback(async () => {
     try {
       console.log('🔄 [COMPONENT] Cargando empresas...');
@@ -247,19 +253,59 @@ export function CompanyList() {
     loadCompanies()
   }
 
-  // Filtrar empresas basado en la búsqueda
-  const filteredCompanies = companies.filter(company =>
-    company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    company.nit.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    company.email.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredCompanies = companies.filter(company => {
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch = company.name.toLowerCase().includes(searchLower) ||
+      company.nit.toLowerCase().includes(searchLower) ||
+      company.email.toLowerCase().includes(searchLower);
+  
+    // Si hay un filtro seleccionado, buscar coincidencia exacta en la primera letra del tipo
+    if (selectedFilter) {
+      const filterLower = selectedFilter.toLowerCase();
+      const companyTipo = company.tipo?.toLowerCase() || '';
+      
+      return matchesSearch && (
+        company.name.toLowerCase().startsWith(filterLower) ||
+        companyTipo.startsWith(filterLower)
+      );
+    }
+  
+    return matchesSearch;
+  });
 
   // Paginación
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedCompanies = filteredCompanies.slice(startIndex, startIndex + itemsPerPage)
   const totalPages = Math.ceil(filteredCompanies.length / itemsPerPage)
 
+  const handleAddFilter = () => {
+    if (newFilterName.trim() && !customFilters.includes(newFilterName.trim())) {
+      setCustomFilters(prev => [...prev, newFilterName.trim()])
+      setNewFilterName("")
+      setShowAddFilter(false)
+    }
+  }
+
+  const applyFilter = (filter: string | null) => {
+    setSelectedFilter(filter)
+  }
+
+  const handleRemoveFilter = (filterToRemove: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCustomFilters(prev => prev.filter(filter => filter !== filterToRemove))
+    if (selectedFilter === filterToRemove) {
+      setSelectedFilter(null)
+    }
+  }
+
+  const handleNewFilterClick = () => {
+    setShowToast(true)
+    // Opcional: ocultar el toast después de unos segundos
+    setTimeout(() => setShowToast(false), 3000)
+  }
+
   return (
+    <ToastProvider>
     <div className="w-full p-6 space-y-6">
       {/* Header */}
       <div className="space-y-2">
@@ -276,24 +322,97 @@ export function CompanyList() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-xs bg-secondary/50 border-border text-white"
           />
-          <Select defaultValue="all">
-            <SelectTrigger className="w-[170px] bg-secondary/50 border-border text-white">
-              <SelectValue placeholder="Filtrar empresas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las empresas</SelectItem>
-              <SelectItem value="active">Activas</SelectItem>
-              <SelectItem value="inactive">Inactivas</SelectItem>
-            </SelectContent>
-          </Select>
+
+          {/* Select de filtros personalizados */}
           <div className="flex items-center gap-2">
-            <Switch
-              checked={markCompanies}
-              onCheckedChange={setMarkCompanies}
-              className="data-[state=checked]:bg-emerald-500"
-            />
-            <span className="text-sm text-foreground">Marcar Empresas</span>
+            <Select
+              value={selectedFilter || "all"}
+              onValueChange={(value) => setSelectedFilter(value === "all" ? null : value)}
+            >
+              <SelectTrigger className="w-[200px] bg-secondary/50 border-border text-white">
+                <SelectValue placeholder="Filtrar por..." />
+              </SelectTrigger>
+              <SelectContent>
+                {/* ✅ Opción "Todos" con valor no vacío */}
+                <SelectItem value="all">
+                  <div className="flex items-center justify-between">
+                    <span>Todas las empresas</span>
+                  </div>
+                </SelectItem>
+
+                {customFilters.map((filter) => (
+                    <SelectItem key={filter} value={filter}>
+                      <div className="flex justify-between items-center group w-full">
+                        <span className="flex-1">{filter}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground ml-2"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleRemoveFilter(filter, e)
+                          }}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+
+            {/* Botón para agregar nuevo filtro */}
+            {showAddFilter ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Nuevo filtro..."
+                  value={newFilterName}
+                  onChange={(e) => setNewFilterName(e.target.value)}
+                  className="w-32 bg-secondary/50 border-border text-white"
+                  autoFocus
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAddFilter}
+                  disabled={!newFilterName.trim()}
+                >
+                  ✓
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowAddFilter(false)
+                    setNewFilterName("")
+                  }}
+                >
+                  ✕
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNewFilterClick} 
+              >
+                + Nuevo Filtro
+              </Button>
+            )}
           </div>
+
+          {/* Botón para limpiar filtro */}
+          {selectedFilter && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedFilter(null)}
+              className="text-muted-foreground"
+            >
+              Limpiar filtro
+            </Button>
+          )}
+
           <div className="flex items-center gap-2">
             <Button
               variant={showAllPasswords ? "default" : "outline"}
@@ -306,6 +425,7 @@ export function CompanyList() {
             </Button>
           </div>
         </div>
+
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90"
           onClick={() => {
@@ -624,5 +744,31 @@ export function CompanyList() {
         />
       </SlideModal>
     </div>
+    <Toast open={showToast} onOpenChange={setShowToast}>
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">
+                Función en desarrollo
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Los filtros personalizados estarán disponibles pronto
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowToast(false)}
+              className="h-6 w-6 p-0"
+            >
+              ×
+            </Button>
+          </div>
+        </Toast>
+
+        <ToastViewport />
+    </ToastProvider>
   )
 }

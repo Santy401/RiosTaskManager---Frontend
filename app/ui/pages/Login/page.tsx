@@ -79,9 +79,9 @@ export default function LoginPage() {
                         <span className="text-2xl font-bold text-white"> <Image
                             src="/favicon.ico"
                             alt="Logo RiosBackend"
-                            width={50}
-                            height={50}
-                            className="transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]"
+                            width={150}
+                            height={150}
+                            className="transition-all scale-170 duration-300 hover:scale-110 hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.7)]"
                         /></span>
                     </div>
                     <h1 className="text-3xl font-bold text-foreground mb-2">Bienvenido</h1>
