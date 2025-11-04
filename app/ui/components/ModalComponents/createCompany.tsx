@@ -24,7 +24,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
     tipo: "A",
     nit: "",
     cedula: "",
-    dian: "Activa",
+    dian: "",
     firma: "Digital",
     softwareContable: "",
     usuario: "",
@@ -53,8 +53,8 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
         tipo: editingCompany.tipo || "A",
         nit: editingCompany.nit || "",
         cedula: editingCompany.cedula || "",
-        dian: editingCompany.dian || "Activa",
-        firma: editingCompany.firma || "Digital",
+        dian: editingCompany.dian || "",
+        firma: editingCompany.firma || "",
         softwareContable: editingCompany.softwareContable || "",
         usuario: editingCompany.usuario || "",
         contraseña: editingCompany.contraseña || "",
@@ -72,8 +72,8 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
         tipo: "A",
         nit: "",
         cedula: "",
-        dian: "Activa",
-        firma: "Digital",
+        dian: "",
+        firma: "",
         softwareContable: "",
         usuario: "",
         contraseña: "",
@@ -345,11 +345,11 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
         {/* DIAN Status */}
         <div className="space-y-2">
           <Label htmlFor="dian" className="text-sm font-medium text-foreground">
-            Estado DIAN
+            DIAN
           </Label>
           <Input
             id="dian"
-            placeholder="Estado DIAN"
+            placeholder="DIAN"
             value={formData.dian}
             onChange={(e) => handleInputChange("dian", e.target.value)}
             className="bg-secondary/50 border-border text-white"
