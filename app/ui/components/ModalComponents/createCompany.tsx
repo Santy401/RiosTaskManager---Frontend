@@ -90,6 +90,10 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+      console.log('Datos del formulario:', formData)
+  console.log('Campo firma:', formData.firma)
+  
+
     // Validaciones básicas
     if (!formData.name.trim()) {
       setError("El nombre de la empresa es obligatorio")

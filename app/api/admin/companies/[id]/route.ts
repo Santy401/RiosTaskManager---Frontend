@@ -10,13 +10,26 @@ interface DecodedToken {
 
 interface CompanyUpdateData {
   name?: string;
+  tipo?: string;
+  nit?: string;
+  cedula?: string;
+  dian?: string;
+  firma?: string;
+  softwareContable?: string;
+  usuario?: string;
+  contraseña?: string;
+  servidorCorreo?: string;
   email?: string;
+  claveCorreo?: string;
+  claveCC?: string;
+  claveSS?: string;
+  claveICA?: string;
   phone?: string;
   address?: string;
-  nit?: string;
   state?: boolean;
   updatedAt: Date;
 }
+
 
 export async function DELETE(
   request: NextRequest,
@@ -126,7 +139,23 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, email, phone, address, nit, state } = body;
+    const {
+      name, tipo, nit, cedula, dian, firma, softwareContable,
+      usuario, contraseña, servidorCorreo, email, claveCorreo,
+      claveCC, claveSS, claveICA, phone, address, state
+    } = body;
+
+    const hasUpdates = [
+      name, tipo, nit, cedula, dian, firma, softwareContable,
+      usuario, contraseña, servidorCorreo, email, claveCorreo,
+      claveCC, claveSS, claveICA, phone, address, state
+    ].some(field => field !== undefined);
+
+    if (!hasUpdates) {
+      return NextResponse.json({
+        error: 'Al menos un campo debe ser actualizado'
+      }, { status: 400 });
+    }
 
     if (!name && !email && !phone && !address && !nit && state === undefined) {
       return NextResponse.json({
@@ -151,14 +180,29 @@ export async function PUT(
     const updateData: CompanyUpdateData = {
       updatedAt: new Date()
     };
-    
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    if (phone) updateData.phone = phone;
-    if (address) updateData.address = address;
-    if (nit) updateData.nit = nit;
+
+    if (name !== undefined) updateData.name = name;
+    if (tipo !== undefined) updateData.tipo = tipo;
+    if (nit !== undefined) updateData.nit = nit;
+    if (cedula !== undefined) updateData.cedula = cedula;
+    if (dian !== undefined) updateData.dian = dian;
+    if (firma !== undefined) updateData.firma = firma;
+    if (softwareContable !== undefined) updateData.softwareContable = softwareContable;
+    if (usuario !== undefined) updateData.usuario = usuario;
+    if (contraseña !== undefined) updateData.contraseña = contraseña;
+    if (servidorCorreo !== undefined) updateData.servidorCorreo = servidorCorreo;
+    if (email !== undefined) updateData.email = email;
+    if (claveCorreo !== undefined) updateData.claveCorreo = claveCorreo;
+    if (claveCC !== undefined) updateData.claveCC = claveCC;
+    if (claveSS !== undefined) updateData.claveSS = claveSS;
+    if (claveICA !== undefined) updateData.claveICA = claveICA;
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
     if (state !== undefined) updateData.state = state;
 
+    // DEBUG: Ver qué se va a actualizar
+    console.log('🔄 Campos a actualizar:', Object.keys(updateData));
+    console.log('📝 Valor de firma:', updateData.firma);
     const updatedCompany = await prisma.company.update({
       where: { id: companyId },
       data: updateData,
