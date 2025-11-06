@@ -259,20 +259,20 @@ export function CompanyList() {
       company.nit.toLowerCase().includes(searchLower) ||
       company.email.toLowerCase().includes(searchLower);
 
-    // Si hay un filtro seleccionado, buscar coincidencia exacta en la primera letra del tipo
+    // Si hay un filtro seleccionado, filtrar SOLO por tipo de empresa
     if (selectedFilter) {
       const filterLower = selectedFilter.toLowerCase();
       const companyTipo = company.tipo?.toLowerCase() || '';
 
-      return matchesSearch && (
-        company.name.toLowerCase().startsWith(filterLower) ||
-        companyTipo.startsWith(filterLower)
-      );
+      // Filtrar solo por tipo (coincidencia exacta o primera letra)
+      const matchesFilter = companyTipo === filterLower ||
+        companyTipo.startsWith(filterLower);
+
+      return matchesSearch && matchesFilter;
     }
 
     return matchesSearch;
   });
-
   // Paginación
   const startIndex = (currentPage - 1) * itemsPerPage
   const paginatedCompanies = filteredCompanies.slice(startIndex, startIndex + itemsPerPage)
