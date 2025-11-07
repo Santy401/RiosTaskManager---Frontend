@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { UserList } from "../../components/ListsComponents/userList";
-import { CompanyList } from "../../components/ListsComponents/CompanyList";
+import { CompanyList } from "../../components/ListsComponents/Company/CompanyList";
 import { AreaList } from "../../components/ListsComponents/AreaList";
 
 interface ListsPageProps {

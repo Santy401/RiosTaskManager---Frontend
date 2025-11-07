@@ -19,6 +19,66 @@ export interface Company {
     updatedAt: string;  // Campo añadido
 }
 
+export interface CompanyFromAPI {
+    id: string;
+    name: string;
+    tipo: string;
+    nit: string;
+    cedula: string;
+    dian: string;
+    firma: string;
+    softwareContable: string;
+    usuario: string;
+    servidorCorreo: string;
+    email: string;
+    claveCorreo: string;
+    claveCC: string;
+    claveSS: string;
+    claveICA: string;
+    contraseña: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CompanyForForm {
+    id: string;
+    name: string;
+    tipo: string;
+    nit: string;
+    cedula: string;
+    dian: string;
+    firma: string;
+    softwareContable: string;
+    usuario: string;
+    servidorCorreo: string;
+    email: string;
+    claveCorreo: string;
+    claveCC: string;
+    claveSS: string;
+    claveICA: string;
+    contraseña: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface CompanyFormData {
+    name: string;
+    tipo: string;
+    nit: string;
+    cedula: string;
+    dian: string;
+    firma: string;
+    softwareContable: string;
+    usuario: string;
+    servidorCorreo: string;
+    email: string;
+    claveCorreo: string;
+    claveCC: string;
+    claveSS: string;
+    claveICA: string;
+    contraseña: string;
+}
+
 export interface CreateCompanyData {
     name: string;
     tipo: string;
