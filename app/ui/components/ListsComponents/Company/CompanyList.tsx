@@ -74,10 +74,12 @@ export function CompanyList() {
     contextMenuRef
   } = useContextMenu()
 
-  const { handleCreateCompany, handleMenuAction } = useCompanyActions(
+  const { handleCreateCompany, handleMenuAction, isDuplicating } = useCompanyActions(
     loadCompanies,
     closeContextMenu
   )
+  
+  const isItemDuplicating = (id: string) => isDuplicating === id
 
   const {
     setShowAddFilter,
@@ -97,7 +99,7 @@ export function CompanyList() {
   }
 
   const onMenuAction = (action: string, companyId: string, companyName: string) => {
-    handleMenuAction(action, companyId, companyName, companies, openEditModal)
+    handleMenuAction(action, companyId, companyName, companies, openEditModal, isItemDuplicating)
   }
 
   const onSubmitCompany = (companyData: CompanyFormData) => {
@@ -167,6 +169,7 @@ export function CompanyList() {
           onClose={closeContextMenu}
           menuRef={contextMenuRef}
           isDeleting={isDeletingCompany}
+          isDuplicating={isItemDuplicating}
         />
 
         {hasCompanies && (

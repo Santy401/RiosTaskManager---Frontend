@@ -1,6 +1,7 @@
+import * as React from 'react'
 import { useCompany } from '@/app/presentation/hooks/Company/useCompany'
 
-interface CompanyFormData {
+export interface CompanyFormData {
   name: string;
   tipo: string;
   nit: string;
@@ -28,6 +29,21 @@ export const useCompanyActions = (
   closeContextMenu: () => void
 ) => {
   const { createCompany, updateCompany, deleteCompany } = useCompany()
+  const [isDuplicating, setIsDuplicating] = React.useState<string | null>(null)
+
+  const handleDuplicateCompany = async (company: any) => {
+    try { 
+      setIsDuplicating(company.id)
+      const { id, createdAt, updatedAt, ...companyData } = company
+      await createCompany(companyData)
+      onSuccess()
+    } catch (error) {
+console.error('Error duplicando empresa:', error)
+      throw error
+    } finally {
+      setIsDuplicating(null)
+    }
+  }
 
   const handleCreateCompany = async (
     companyData: CompanyFormData,
@@ -51,7 +67,8 @@ export const useCompanyActions = (
     companyId: string,
     companyName: string,
     companies: any[],
-    openEditModal: (company: any) => void
+    openEditModal: (company: any) => void,
+    isDuplicating?: (id: string) => boolean
   ) => {
     try {
       switch (action) {
@@ -71,6 +88,13 @@ export const useCompanyActions = (
             onSuccess()
           }
           break
+        case 'duplicate':
+          if (isDuplicating && isDuplicating(companyId)) return
+          const companyToDuplicate = companies.find(c => c.id === companyId)
+          if (companyToDuplicate) {
+            await handleDuplicateCompany(companyToDuplicate)
+          }
+          break
       }
     } catch (error) {
       console.error('Error en acción:', error)
@@ -81,6 +105,8 @@ export const useCompanyActions = (
 
   return {
     handleCreateCompany,
-    handleMenuAction
+    handleMenuAction,
+    handleDuplicateCompany,
+    isDuplicating
   }
 }
