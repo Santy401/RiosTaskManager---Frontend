@@ -70,6 +70,7 @@ export function TasksPage(): JSX.Element {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
+  const [isDuplicating, setIsDuplicating] = useState<string | null>(null)
 
   const [lastTap, setLastTap] = useState(0)
   const itemsPerPage = 10
@@ -191,7 +192,30 @@ export function TasksPage(): JSX.Element {
     }
   }
 
-  // Acciones del menú contextual
+  const handleDuplicateTask = async (task: Task): Promise<void> => {
+    try {
+      setIsDuplicating(task.id)
+      const { id, createdAt, updatedAt, company, area, user, ...taskData } = task
+      
+      const duplicateData = {
+        ...taskData,
+        companyId: task.company?.id || '',
+        areaId: task.area?.id || '',
+        userId: task.user?.id || ''
+      }
+      
+      await createTask(duplicateData)
+      await loadTasks()
+    } catch (error) {
+      console.error('Error duplicando tarea:', error)
+      throw error
+    } finally {
+      setIsDuplicating(null)
+    }
+  }
+
+  const isItemDuplicating = (id: string): boolean => isDuplicating === id
+
   const handleMenuAction = async (action: string, itemId: string, itemName: string): Promise<void> => {
     try {
       switch (action) {
@@ -215,6 +239,15 @@ export function TasksPage(): JSX.Element {
             await loadTasks()
           }
           break
+
+        case 'duplicate': {
+          if (isItemDuplicating(itemId)) return
+          const taskToDuplicate = tasks.find(task => task.id === itemId)
+          if (taskToDuplicate) {
+            await handleDuplicateTask(taskToDuplicate)
+          }
+          break
+        }
 
         default:
           break
@@ -430,16 +463,18 @@ const isOverdue = (dueDate: Date): boolean => {
             {hasTasks ? (
               filteredTasks.map((task) => {
                 const isDeleting = isDeletingTask(task.id);
+                const isDuplicatingTask = isItemDuplicating(task.id);
+                const isProcessing = isDeleting || isDuplicatingTask;
 
                 return (
                   <TableRow
                     key={task.id}
-                    className={`border-border hover:bg-secondary/30 transition-colors duration-200 ${isDeleting ? 'opacity-50 pointer-events-none' : ''
+                    className={`border-border hover:bg-secondary/30 transition-colors duration-200 ${isProcessing ? 'opacity-50 pointer-events-none' : ''
                       }`}
-                    onContextMenu={(e) => !isDeleting && handleContextMenu(e, task)}
-                    onDoubleClick={(e) => !isDeleting && handleDoubleClick(e, task)}
-                    onClick={(e) => !isDeleting && handleDoubleTap(e, task)}
-                    onTouchStart={(e) => !isDeleting && handleDoubleTap(e, task)}
+                    onContextMenu={(e) => !isProcessing && handleContextMenu(e, task)}
+                    onDoubleClick={(e) => !isProcessing && handleDoubleClick(e, task)}
+                    onClick={(e) => !isProcessing && handleDoubleTap(e, task)}
+                    onTouchStart={(e) => !isProcessing && handleDoubleTap(e, task)}
                     style={{ cursor: 'context-menu' }}
                   >
                     <TableCell className="font-medium">
@@ -448,6 +483,11 @@ const isOverdue = (dueDate: Date): boolean => {
                           <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
                           <span className="text-muted-foreground">Eliminando...</span>
                         </div>
+                      ) : isDuplicatingTask ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                          <span className="text-muted-foreground">Duplicando...</span>
+                        </div>
                       ) : (
                         <div className="flex flex-col">
                           <span className="font-semibold text-foreground">{task.name}</span>
@@ -455,14 +495,14 @@ const isOverdue = (dueDate: Date): boolean => {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground max-w-md">
-                      {isDeleting ? (
+                      {isProcessing ? (
                         <div className="line-clamp-2 text-muted-foreground">-</div>
                       ) : (
                         <div className="line-clamp-2">{task.description}</div>
                       )}
                     </TableCell>
                     <TableCell>
-                      {isDeleting ? (
+                      {isProcessing ? (
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center">
                             <Loader2 className="h-3 w-3 animate-spin text-blue-400" />
@@ -481,7 +521,7 @@ const isOverdue = (dueDate: Date): boolean => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {isDeleting ? (
+                      {isProcessing ? (
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center">
                             <Loader2 className="h-3 w-3 animate-spin text-green-400" />
@@ -500,7 +540,7 @@ const isOverdue = (dueDate: Date): boolean => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {isDeleting ? (
+                      {isProcessing ? (
                         <div className="flex items-center gap-2">
                           <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center">
                             <Loader2 className="h-3 w-3 animate-spin text-purple-400" />
@@ -524,7 +564,7 @@ const isOverdue = (dueDate: Date): boolean => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {isDeleting ? (
+                      {isProcessing ? (
                         <div className="h-6 flex items-center">
                           <span className="text-xs text-muted-foreground">-</span>
                         </div>
@@ -536,7 +576,7 @@ const isOverdue = (dueDate: Date): boolean => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {isDeleting ? (
+                      {isProcessing ? (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4" />
                           <span>-</span>
@@ -551,7 +591,7 @@ const isOverdue = (dueDate: Date): boolean => {
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {isDeleting ? '-' : formatDate(task.createdAt)}
+                      {isProcessing ? '-' : formatDate(task.createdAt)}
                     </TableCell>
                   </TableRow>
                 );
@@ -587,6 +627,7 @@ const isOverdue = (dueDate: Date): boolean => {
           onClose={closeContextMenu}
           menuRef={contextMenuRef}
           isDeleting={isDeletingTask}
+          isDuplicating={isItemDuplicating}
         />
       </div>
 
