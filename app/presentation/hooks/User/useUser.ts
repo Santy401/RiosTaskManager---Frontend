@@ -4,9 +4,9 @@ import { useUserBase } from './useUserBase';
 import { UseUserResult } from './types';
 
 export const useUser = (): UseUserResult => {
-  const { getAllUsers } = useUserQueries();
+  const { getAllUsers, invalidateUsersCache } = useUserQueries();
   const { createUser, deleteUser } = useUserActions();
   const { isLoading, error } = useUserBase();
 
-  return { createUser, getAllUsers, isLoading, deleteUser, error };
+  return { createUser, getAllUsers, invalidateUsersCache, isLoading, deleteUser, error };
 };

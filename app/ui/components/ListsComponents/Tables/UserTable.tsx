@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useUserActions } from "@/app/presentation/hooks/User/useUserActions"
 import { Avatar, AvatarFallback } from "@/app/ui/components/StyledComponents/avatar"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
@@ -8,7 +9,7 @@ import { Badge } from "@/app/ui/components/StyledComponents/badge"
 import { Switch } from "@/app/ui/components/StyledComponents/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/ui/components/StyledComponents/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/ui/components/StyledComponents/table"
-import { CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight, User } from "lucide-react"
+import { ChevronLeft, ChevronRight, User } from "lucide-react"
 import { SlideModal } from "../../ModalComponents/slideModal"
 import { AddUserForm } from "../../ModalComponents/createUser"
 import { useUser } from "@/app/presentation/hooks/User/useUser"
@@ -33,7 +34,7 @@ export function UsersTable() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
 
-  const { getAllUsers, isLoading, deleteUser, error } = useUser()
+  const { getAllUsers, isLoading, deleteUser, error, invalidateUsersCache } = useUser()
   const {
     contextMenu,
     handleContextMenu,
@@ -61,7 +62,6 @@ export function UsersTable() {
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Verificar si hay usuarios para mostrar
   const hasUsers = filteredUsers.length > 0
 
   const handleMenuAction = async (action: string, userId: string, userName: string) => {
@@ -74,9 +74,14 @@ export function UsersTable() {
           console.log('✏️ Editar usuario:', userId)
           break
         case 'delete':
-          if (confirm(`¿Eliminar el usuario "${userName}"?`)) {
-            await deleteUser(userId)
-            await loadUsers()
+          if (confirm(`¿Estás seguro de que deseas eliminar el usuario "${userName}"? Esta acción no se puede deshacer.`)) {
+            console.log('🗑️ [TABLE] Eliminando usuario:', userId);
+            await deleteUser(userId);
+
+            console.log('🔄 [TABLE] Usuario eliminado, recargando lista...');
+            setTimeout(() => {
+              loadUsers();
+            }, 300);
           }
           break
       }
@@ -87,9 +92,8 @@ export function UsersTable() {
     }
   }
 
-  // Manejar el context menu específico para la tabla
   const handleTableContextMenu = (e: React.MouseEvent, userId: string, userName: string) => {
-    e.preventDefault() // Esto es crucial para que aparezca el context menu
+    e.preventDefault()
     handleContextMenu(e, userId, userName)
   }
 
@@ -107,7 +111,6 @@ export function UsersTable() {
       'bg-cyan-500/20 text-cyan-400'
     ];
 
-    // Generar un índice basado en el nombre
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
       hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -117,20 +120,25 @@ export function UsersTable() {
     return colors[index];
   };
 
-  const handleAddUser = async () => {
+  const { createUser } = useUserActions();
+
+  const handleAddUser = async (userData: any) => {
     try {
-      // Esta función se ejecutará cuando el formulario tenga éxito
-      await loadUsers() // Recargar la lista de usuarios
+      await createUser(userData);
+      return true;
     } catch (error) {
-      console.error('Error actualizando lista de usuarios:', error)
+      console.error('Error creando usuario:', error);
+      return false;
     }
-  }
+  };
 
   const handleCreateSuccess = () => {
-    // Cerrar el modal después del éxito
-    setIsModalOpen(false)
-    // Recargar los usuarios
-    loadUsers()
+    console.log('✅ [TABLE] Usuario creado, recargando lista...');
+    setIsModalOpen(false);
+
+      setTimeout(() => {
+      loadUsers();
+    }, 300);
   }
 
   // Paginación
@@ -138,6 +146,11 @@ export function UsersTable() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
 
   return (
     <div className="w-full p-6 space-y-6">
@@ -257,7 +270,6 @@ export function UsersTable() {
           </TableBody>
         </Table>
 
-        {/* Context Menu */}
         {contextMenu.visible && (
           <ContextMenu
             visible={contextMenu.visible}
@@ -276,7 +288,6 @@ export function UsersTable() {
         <div className="text-red-500 text-sm">Error: {error}</div>
       )}
 
-      {/* Pagination - Solo se muestra si hay usuarios */}
       {hasUsers && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

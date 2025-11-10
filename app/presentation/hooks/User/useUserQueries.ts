@@ -14,54 +14,86 @@ interface User {
 
 interface UseUserQueriesResult {
     getAllUsers: () => Promise<User[]>;
+    invalidateUsersCache: () => void;
 }
+
+
+let usersCache: User[] | null = null;
+let pendingRequest: Promise<User[]> | null = null;
 
 export const useUserQueries = (): UseUserQueriesResult => {
     const { setLoading, setError } = useUserBase();
 
-    const getAllUsers = async (): Promise<User[]> => {
+    const invalidateUsersCache = () => {
+        console.log('🗑️ [HOOK] Invalidando cache de usuarios');
+        usersCache = null;
+        pendingRequest = null;
+    };
+
+    const getAllUsers = async (forceRefresh = false): Promise<User[]> => {
+        if (forceRefresh) {
+            invalidateUsersCache();
+        }
+
+        if (pendingRequest && !forceRefresh) {
+            return pendingRequest;
+        }
+
+
+        if (usersCache && !forceRefresh) {
+            return usersCache;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
             console.log('🔍 [HOOK] Iniciando fetch a /api/admin/users');
 
-            const response = await fetch('/api/admin/users', {
+            pendingRequest = fetch('/api/admin/users', {
                 method: 'GET',
                 credentials: 'include',
-            });
+            })
+                .then(async (response) => {
+                    console.log('📊 [HOOK] Response status:', response.status);
 
-            console.log('📊 [HOOK] Response status:', response.status);
-            console.log('📋 [HOOK] Response ok:', response.ok);
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.log('❌ [HOOK] Error response text:', errorText);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.log('❌ [HOOK] Error response text:', errorText);
+                        let errorMessage = 'Error al obtener usuarios';
+                        try {
+                            const errorData = JSON.parse(errorText);
+                            errorMessage = errorData.error || errorMessage;
+                        } catch {
+                            errorMessage = errorText || `Error ${response.status}`;
+                        }
 
-                let errorMessage = 'Error al obtener usuarios';
-                try {
-                    const errorData = JSON.parse(errorText);
-                    errorMessage = errorData.error || errorMessage;
-                } catch {
-                    errorMessage = errorText || `Error ${response.status}`;
-                }
+                        throw new Error(errorMessage);
+                    }
 
-                throw new Error(errorMessage);
-            }
+                    const users = await response.json();
+                    console.log('✅ [HOOK] Usuarios obtenidos exitosamente');
 
-            const users = await response.json();
-            console.log('✅ [HOOK] Usuarios obtenidos exitosamente:', users);
 
-            return users;
+                    usersCache = users;
+                    return users;
+                })
+                .finally(() => {
+                    pendingRequest = null;
+                    setLoading(false);
+                });
+
+            return await pendingRequest;
+
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             console.error('💥 [HOOK] Error en getAllUsers:', err);
             setError(errorMessage);
+            pendingRequest = null;
             throw err;
-        } finally {
-            setLoading(false);
         }
     };
 
-    return { getAllUsers }
+    return { getAllUsers, invalidateUsersCache };
 }

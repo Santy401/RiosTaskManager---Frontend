@@ -1,13 +1,16 @@
 import { useUserBase } from "./useUserBase";
+import { useUserQueries } from "./useUserQueries";
 import { CreateUserData, CreateUserResponse, DeleteUserResponse } from "./types";
 
 interface UseUserActionsResult {
     createUser: (data: CreateUserData) => Promise<CreateUserResponse>;
     deleteUser: (userId: string) => Promise<DeleteUserResponse>;
+    invalidateUsersCache: () => void;
 }
 
 export const useUserActions = (): UseUserActionsResult => {
     const { setLoading, setError } = useUserBase();
+    const { invalidateUsersCache } = useUserQueries();
 
     const createUser = async (data: CreateUserData): Promise<CreateUserResponse> => {
         setLoading(true);
@@ -40,6 +43,10 @@ export const useUserActions = (): UseUserActionsResult => {
             }
 
             const result = await response.json();
+
+            console.log('🔄 [HOOK] Usuario creado, invalidando cache...');
+            invalidateUsersCache();
+
             return result;
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -71,6 +78,8 @@ export const useUserActions = (): UseUserActionsResult => {
 
             const result = await response.json();
             console.log('✅ [HOOK] Usuario eliminado exitosamente:', result);
+            console.log('🔄 [HOOK] Usuario eliminado, invalidando cache...');
+            invalidateUsersCache();
             return result;
 
         } catch (err) {
@@ -83,5 +92,5 @@ export const useUserActions = (): UseUserActionsResult => {
         }
     };
 
-    return { createUser, deleteUser }
+    return { createUser, deleteUser, invalidateUsersCache }
 }

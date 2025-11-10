@@ -88,10 +88,11 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, editingTask }: C
   // ✅ Cargar datos iniciales para edición
   useEffect(() => {
     if (editingTask) {
+      const isoDate = editingTask.dueDate ? new Date(editingTask.dueDate).toISOString().split('T')[0] : ""
       setFormData({
         name: editingTask.name || "",
         description: editingTask.description || "",
-        dueDate: editingTask.dueDate ? new Date(editingTask.dueDate).toISOString().split('T')[0] : "",
+        dueDate: isoDate,
         status: editingTask.status || "pendiente",
         companyId: editingTask.companyId || editingTask.company?.id || "",
         areaId: editingTask.areaId || editingTask.area?.id || "",
@@ -262,16 +263,27 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, editingTask }: C
           <Label htmlFor="dueDate" className="text-sm font-medium text-foreground">
             Fecha de Vencimiento *
           </Label>
-          <Input
-            id="dueDate"
-            type="date"
-            value={formData.dueDate}
-            onChange={(e) => handleInputChange("dueDate", e.target.value)}
-            className="bg-secondary/50 border-border text-white"
-            required
-            disabled={isSubmitting || success}
-          // min={new Date().toISOString().split('T')[0]}
-          />
+          <div className="relative">
+            <Input
+              id="dueDate"
+              type="date"
+              value={formData.dueDate}
+              onChange={(e) => handleInputChange("dueDate", e.target.value)}
+              className="bg-secondary/50 border-border text-white [color-scheme:dark] cursor-pointer opacity-0 absolute inset-0 w-full h-full z-10"
+              required
+              disabled={isSubmitting || success}
+            />
+            <div className="bg-secondary/50 border border-border rounded-md px-3 py-2 text-white text-sm h-10 flex items-center cursor-pointer">
+              {formData.dueDate 
+                ? new Date(formData.dueDate).toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  })
+                : 'DD/MM/YYYY'
+              }
+            </div>
+          </div>
         </div>
 
         {/* Estado */}

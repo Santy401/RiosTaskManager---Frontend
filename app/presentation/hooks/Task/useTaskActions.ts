@@ -7,10 +7,11 @@ interface UseTaskActionsResult {
     deleteTask: (taskId: string) => Promise<DeleteTaskResponse>;
     updateTask: (params: { taskId: string; data: UpdateTaskData }) => Promise<Task>;
     submitTask: (data: CreateTaskData, editingTask?: Task | null) => Promise<Task>;
+    duplicateTask: (task: Task) => Promise<Task>;
     isDeletingTask: (taskId: string) => boolean;
 }
 
-export const useTaskActions = (): UseTaskActionsResult => {
+export const useTaskActions = (loadTasks?: () => Promise<void>): UseTaskActionsResult => {
     const { setLoading, setError } = useTaskBase();
     const { addDeleting, removeDeleting, isDeleting } = useLoading();
 
@@ -153,11 +154,55 @@ export const useTaskActions = (): UseTaskActionsResult => {
         }
     }
 
+    const duplicateTask = async (task: Task): Promise<Task> => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            console.log('📋 [HOOK] Duplicando tarea...', task);
+
+            // Validate required fields
+            if (!task.company?.id || !task.area?.id || !task.user?.id) {
+                throw new Error('La tarea no tiene todos los datos necesarios para duplicar');
+            }
+
+            // Create a new task with the same data but without the ID
+            const duplicateData: CreateTaskData = {
+                name: `${task.name} (Copia)`,
+                description: task.description,
+                status: task.status,
+                dueDate: task.dueDate,
+                companyId: task.company.id,
+                areaId: task.area.id,
+                userId: task.user.id,
+            };
+
+            const newTask = await createTask(duplicateData);
+            console.log('✅ [HOOK] Tarea duplicada:', newTask);
+
+            // Reload tasks if the callback is provided
+            if (loadTasks) {
+                await loadTasks();
+            }
+
+            return newTask;
+
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+            console.error('💥 [HOOK] Error en duplicateTask:', err);
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    }
+
     return { 
         createTask, 
         deleteTask, 
         updateTask, 
         submitTask, 
+        duplicateTask,
         isDeletingTask: isDeleting 
     };
 }

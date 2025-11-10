@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
@@ -12,7 +11,7 @@ import { useUser } from "@/app/presentation/hooks/User/useUser"
 import { Loader2, CheckCircle2, XCircle } from "lucide-react"
 
 interface AddUserFormProps {
-  onSubmit: (data: any) => void
+  onSubmit: (data: any) => Promise<boolean> | void
   onCancel: () => void
   onSuccess?: () => void
 }
@@ -68,24 +67,29 @@ export function AddUserForm({ onSubmit, onCancel, onSuccess }: AddUserFormProps)
     setSuccess(false)
 
     try {
-      const newUser = await createUser(formData)
+      // SOLUCIÓN: Usar solo createUser o onSubmit, no ambos
+      let result;
       
-      // Mostrar estado de éxito
-      setSuccess(true)
-      
-      // Llamar al callback de éxito del padre
-      if (onSuccess) {
-        setTimeout(() => {
-          onSuccess()
-        }, 1500)
+      if (onSubmit) {
+        // Si se proporciona onSubmit, usarlo
+        result = await onSubmit(formData);
       } else {
-        // Si no hay callback de éxito, usar el onSubmit tradicional
-        onSubmit(newUser)
-        setTimeout(() => {
-          onCancel()
-        }, 1500)
+        // Si no, usar createUser directamente
+        result = await createUser(formData);
       }
+
+      // Si tenemos éxito, actualizar el estado
+      setSuccess(true);
       
+      // Llamar al callback de éxito después de un breve delay
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          onCancel();
+        }
+      }, 1000);
+
     } catch (err: any) {
       console.error('Error creando usuario:', err)
       setLocalError(err.message || "Error al crear el usuario. Por favor, intenta nuevamente.")
@@ -184,7 +188,7 @@ export function AddUserForm({ onSubmit, onCancel, onSuccess }: AddUserFormProps)
           </p>
         </div>
 
-   
+        {/* Role Field */}
         <div className="space-y-2">
           <Label htmlFor="role" className="text-sm font-medium text-foreground">
             Rol
@@ -203,38 +207,6 @@ export function AddUserForm({ onSubmit, onCancel, onSuccess }: AddUserFormProps)
             </SelectContent>
           </Select>
         </div>
-
-        {/* <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/30 border border-border">
-          <div className="space-y-0.5">
-            <Label htmlFor="verified" className="text-sm font-medium text-foreground cursor-pointer">
-              Cuenta Verificada
-            </Label>
-            <p className="text-xs text-muted-foreground">Marcar esta cuenta como verificada</p>
-          </div>
-          <Switch
-            id="verified"
-            checked={formData.verified}
-            onCheckedChange={(checked) => handleInputChange("verified", checked)}
-            className="data-[state=checked]:bg-emerald-500"
-            disabled={isLoading || success}
-          />
-        </div>
-
-        <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-secondary/30 border border-border">
-          <div className="space-y-0.5">
-            <Label htmlFor="sendEmail" className="text-sm font-medium text-foreground cursor-pointer">
-              Enviar Email de Bienvenida
-            </Label>
-            <p className="text-xs text-muted-foreground">Enviar notificación de creación de cuenta</p>
-          </div>
-          <Switch
-            id="sendEmail"
-            checked={formData.sendEmail}
-            onCheckedChange={(checked) => handleInputChange("sendEmail", checked)}
-            className="data-[state=checked]:bg-emerald-500"
-            disabled={isLoading || success}
-          />
-        </div> */}
       </div>
 
       {/* Footer */}
