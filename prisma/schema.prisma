@@ -23,21 +23,21 @@ model User {
 
 model Company {
   id        String   @id @default(cuid())
-  name      String   // NOMBRE
-  tipo      String   // TIPO
-  nit       String   // NIT
-  cedula    String?  // CEDULA
-  dian      String   // CLAVE DIAN (was claveDian, but keeping dian for compatibility)
-  firma     String   // FIRMA ELEC (was firmaElec, but keeping firma for compatibility)
-  softwareContable String? // SOFTWARE CONTABLE
-  usuario   String   // USUARIO
-  contraseña String  // CLAVE SOFTWARE (was claveSoftware, but keeping contraseña for compatibility)
-  servidorCorreo String // Servidor de correo
-  email     String   // E-MAIL
-  claveCorreo String? // CLAVE CORREO
-  claveCC   String?  // CLAVE CC
-  claveSS   String?  // CLAVE SS
-  claveICA  String?  // CLAVE ICA
+  name      String   
+  tipo      String   
+  nit       String   
+  cedula    String?  
+  dian      String   
+  firma     String   
+  softwareContable String? 
+  usuario   String   
+  contraseña String  
+  servidorCorreo String 
+  email     String   
+  claveCorreo String? 
+  claveCC   String?  
+  claveSS   String? 
+  claveICA  String?  
   tasks     Task[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -66,4 +66,17 @@ model Task {
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CustomFilter {
+  id        String   @id @default(cuid())
+  name      String   
+  field     String   
+  value     String   
+  entity    String   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, entity])
+  @@index([entity])
 }

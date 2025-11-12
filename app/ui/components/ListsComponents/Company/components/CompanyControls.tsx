@@ -1,6 +1,6 @@
 import { Button } from "@/app/ui/components/StyledComponents/button"
 import { Input } from "@/app/ui/components/StyledComponents/input"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Filter, Plus } from "lucide-react"
 import { CompanyFilters } from "./CompanyFilters"
 
 interface CompanyControlsProps {
@@ -20,6 +20,7 @@ interface CompanyControlsProps {
   showAllPasswords: boolean;
   toggleAllPasswords: () => void;
   openCreateModal: () => void;
+  onOpenFilterModal: () => void;
 }
 
 export function CompanyControls({
@@ -38,62 +39,67 @@ export function CompanyControls({
   resetFilterInput,
   showAllPasswords,
   toggleAllPasswords,
-  openCreateModal
+  openCreateModal,
+  onOpenFilterModal
 }: CompanyControlsProps) {
   return (
+    <div className="space-y-4">
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-3 flex-1">
         <Input
-          placeholder="Buscar empresa"
+          placeholder="Buscar empresa por nombre, NIT o email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-xs bg-secondary/50 border-border text-white"
+          className="w-[300px] bg-secondary/50 border-border text-white"
         />
+        
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={toggleAllPasswords}
+          title={showAllPasswords ? "Ocultar contraseñas" : "Mostrar contraseñas"}
+        >
+          {showAllPasswords ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
 
         <CompanyFilters
           selectedFilter={selectedFilter}
           setSelectedFilter={setSelectedFilter}
           customFilters={customFilters}
           onRemoveFilter={onRemoveFilter}
-          showAddFilter={showAddFilter}
-          setShowAddFilter={setShowAddFilter}
-          newFilterName={newFilterName}
-          setNewFilterName={setNewFilterName}
-          onAddFilterClick={onAddFilterClick}
-          handleNewFilterClick={handleNewFilterClick}
-          resetFilterInput={resetFilterInput}
+          showAddFilter={false}
+          setShowAddFilter={() => {}}
+          newFilterName=""
+          setNewFilterName={() => {}}
+          onAddFilterClick={() => {}}
+          handleNewFilterClick={() => {}}
+          resetFilterInput={() => {}}
         />
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          onClick={onOpenFilterModal}
+          className="gap-2"
+        >
+          <Filter className="h-4 w-4" />
+          Nuevo Filtro
+        </Button>
 
-        {selectedFilter && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setSelectedFilter(null)}
-            className="text-muted-foreground"
-          >
-            Limpiar filtro
-          </Button>
-        )}
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant={showAllPasswords ? "default" : "outline"}
-            size="sm"
-            onClick={toggleAllPasswords}
-            className={`flex items-center gap-2 ${showAllPasswords ? 'text-black' : 'text-white'}`}
-          >
-            {showAllPasswords ? <EyeOff className="h-4 w-4 text-black" /> : <Eye className="h-4 w-4" />}
-            {showAllPasswords ? 'Ocultar' : 'Mostrar'} Contraseñas
-          </Button>
-        </div>
+        <Button
+          className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+          onClick={openCreateModal}
+        >
+          <Plus className="h-4 w-4" />
+          Agregar Empresa
+        </Button>
       </div>
-
-      <Button
-        className="bg-primary text-primary-foreground hover:bg-primary/90"
-        onClick={openCreateModal}
-      >
-        Agregar Empresa
-      </Button>
     </div>
+
+  </div>
   )
 }

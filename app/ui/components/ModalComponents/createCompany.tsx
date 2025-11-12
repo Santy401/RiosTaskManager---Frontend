@@ -16,26 +16,38 @@ interface CreateCompanyFormProps {
   onCancel: () => void
   onSuccess?: () => void
   editingCompany?: Company | null; 
+  customFilters?: string[]
 }
 
-export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompany }: CreateCompanyFormProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    tipo: "A",
-    nit: "",
-    cedula: "",
-    dian: "",
-    firma: "Digital",
-    softwareContable: "",
-    usuario: "",
-    contraseña: "",
-    servidorCorreo: "",
-    email: "",
-    claveCorreo: "",
-    claveCC: "",
-    claveSS: "",
-    claveICA: "",
-  })
+const initialFormData = {
+  name: "",
+  tipo: "",
+  nit: "",
+  cedula: "",
+  dian: "",
+  firma: "Digital",
+  softwareContable: "",
+  usuario: "",
+  contraseña: "",
+  servidorCorreo: "",
+  email: "",
+  claveCorreo: "",
+  claveCC: "",
+  claveSS: "",
+  claveICA: "",
+};
+
+export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompany, customFilters = [] }: CreateCompanyFormProps) {
+  const [formData, setFormData] = useState(editingCompany || initialFormData);
+  
+  // Reset form when editingCompany changes
+  useEffect(() => {
+    if (editingCompany) {
+      setFormData(editingCompany);
+    } else {
+      setFormData(initialFormData);
+    }
+  }, [editingCompany]);
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -50,7 +62,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
     if (editingCompany) {
       setFormData({
         name: editingCompany.name || "",
-        tipo: editingCompany.tipo || "A",
+        tipo: editingCompany.tipo || "",
         nit: editingCompany.nit || "",
         cedula: editingCompany.cedula || "",
         dian: editingCompany.dian || "",
@@ -69,7 +81,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
       // Resetear formulario si no hay empresa a editar
       setFormData({
         name: "",
-        tipo: "A",
+        tipo: "",
         nit: "",
         cedula: "",
         dian: "",
@@ -88,22 +100,20 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
   }, [editingCompany])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-      console.log('Datos del formulario:', formData)
-  console.log('Campo firma:', formData.firma)
-  
+    e.preventDefault();
 
     // Validaciones básicas
     if (!formData.name.trim()) {
-      setError("El nombre de la empresa es obligatorio")
-      return
+      setError("El nombre de la empresa es obligatorio");
+      return;
     }
     if (!formData.nit.trim()) {
-      setError("El NIT es obligatorio")
-      return
+      setError("El NIT es obligatorio");
+      return;
     }
     if (!formData.email.trim()) {
+      setError("El email corporativo es obligatorio");
+      return;
       setError("El email corporativo es obligatorio")
       return
     }
@@ -327,24 +337,27 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
 
         {/* Tipo Field */}
         <div className="space-y-2">
-          <Label htmlFor="tipo" className="text-sm font-medium text-foreground">
-            Tipo de Empresa
-          </Label>
-          <Select
-            value={formData.tipo}
-            onValueChange={(value) => handleInputChange("tipo", value)}
-            disabled={isLoading || success}
-          >
-            <SelectTrigger className="bg-secondary/50 border-border text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="A">Tipo A</SelectItem>
-              <SelectItem value="B">Tipo B</SelectItem>
-              <SelectItem value="C">Tipo C</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <Label htmlFor="tipo">Tipo de Empresa *</Label>
+        <Select
+          value={formData.tipo}
+          onValueChange={(value) => setFormData(prev => ({ ...prev, tipo: value }))}
+          disabled={isLoading || success}
+        >
+          <SelectTrigger className="bg-secondary/50 border-border text-white">
+            <SelectValue placeholder="Selecciona un tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            {customFilters.map((filter) => (
+              <SelectItem key={filter} value={filter}>
+                Tipo {filter}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Los tipos disponibles se sincronizan con los filtros personalizados
+        </p>
+      </div>
 
         {/* DIAN Status */}
         <div className="space-y-2">
@@ -384,7 +397,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
           <Input
             id="cedula"
             placeholder="Número de cédula"
-            value={formData.cedula}
+            value={formData.cedula || ''}
             onChange={(e) => handleInputChange("cedula", e.target.value)}
             className="bg-secondary/50 border-border text-white"
             disabled={isLoading || success}
@@ -399,7 +412,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
           <Input
             id="softwareContable"
             placeholder="Nombre del software contable"
-            value={formData.softwareContable}
+            value={formData.softwareContable || ''}
             onChange={(e) => handleInputChange("softwareContable", e.target.value)}
             className="bg-secondary/50 border-border text-white"
             disabled={isLoading || success}
@@ -416,7 +429,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
               id="claveCorreo"
               type={showClaveCorreo ? "text" : "password"}
               placeholder="Contraseña del correo"
-              value={formData.claveCorreo}
+              value={formData.claveCorreo || ''}
               onChange={(e) => handleInputChange("claveCorreo", e.target.value)}
               className="bg-secondary/50 border-border text-white pr-10"
               disabled={isLoading || success}
@@ -448,7 +461,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
               id="claveCC"
               type={showClaveCC ? "text" : "password"}
               placeholder="Clave CC"
-              value={formData.claveCC}
+              value={formData.claveCC || ''}
               onChange={(e) => handleInputChange("claveCC", e.target.value)}
               className="bg-secondary/50 border-border text-white pr-10"
               disabled={isLoading || success}
@@ -480,7 +493,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
               id="claveSS"
               type={showClaveSS ? "text" : "password"}
               placeholder="Clave SS"
-              value={formData.claveSS}
+              value={formData.claveSS || ''}
               onChange={(e) => handleInputChange("claveSS", e.target.value)}
               className="bg-secondary/50 border-border text-white pr-10"
               disabled={isLoading || success}
@@ -512,7 +525,7 @@ export function CreateCompanyForm({ onSubmit, onCancel, onSuccess, editingCompan
               id="claveICA"
               type={showClaveICA ? "text" : "password"}
               placeholder="Clave ICA"
-              value={formData.claveICA}
+              value={formData.claveICA || ''}
               onChange={(e) => handleInputChange("claveICA", e.target.value)}
               className="bg-secondary/50 border-border text-white pr-10"
               disabled={isLoading || success}

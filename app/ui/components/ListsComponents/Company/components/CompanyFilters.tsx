@@ -35,7 +35,7 @@ export function CompanyFilters({
         value={selectedFilter || "all"}
         onValueChange={(value) => setSelectedFilter(value === "all" ? null : value)}
       >
-        <SelectTrigger className="w-[200px] bg-secondary/50 border-border text-white">
+        <SelectTrigger className="w-[150px] bg-secondary/50 border-border text-white">
           <SelectValue placeholder="Filtrar por..." />
         </SelectTrigger>
         <SelectContent>
@@ -62,46 +62,6 @@ export function CompanyFilters({
           ))}
         </SelectContent>
       </Select>
-
-      {/* Botón para agregar nuevo filtro */}
-      {showAddFilter ? (
-        <div className="flex items-center gap-2 text-white">
-          <Input
-            placeholder="Nuevo filtro..."
-            value={newFilterName}
-            onChange={(e) => setNewFilterName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                onAddFilterClick()
-              }
-            }}
-            className="w-32 bg-secondary/50 border-border text-white"
-            autoFocus
-          />
-          <Button
-            size="sm"
-            onClick={onAddFilterClick}
-            disabled={!newFilterName.trim()}
-          >
-            ✓
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={resetFilterInput}
-          >
-            ✕
-          </Button>
-        </div>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleNewFilterClick}
-        >
-          + Nuevo Filtro
-        </Button>
-      )}
     </div>
   )
 }

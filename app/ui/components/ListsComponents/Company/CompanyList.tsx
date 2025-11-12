@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from 'react'
 import { CompanyHeader } from './components/CompanyHeader'
 import { CompanyControls } from './components/CompanyControls'
 import { CompanyTable } from './components/CompanyTable'
@@ -7,8 +8,9 @@ import { CompanyPagination } from './components/CompanyPagination'
 import { CompanyToast } from './components/CompanyToast'
 
 import { SlideModal } from "../../ModalComponents/slideModal"
-import { ToastProvider, ToastViewport } from "@/app/ui/components/StyledComponents/toast"
 import { CreateCompanyForm } from "../../ModalComponents/createCompany"
+import { CreateCustomFilterForm } from "../../ModalComponents/createCustomFilter" // NUEVO
+import { ToastProvider, ToastViewport } from "@/app/ui/components/StyledComponents/toast"
 import { ContextMenu } from '@/app/ui/components/ListsComponents/ActionsMenu/ContextMenu'
 
 import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu'
@@ -34,7 +36,8 @@ export function CompanyList() {
     customFilters,
     filteredCompanies,
     handleAddFilter,
-    handleRemoveFilter
+    handleRemoveFilter,
+    loadFiltersFromDB
   } = useCompanyFilters(companies)
 
   const {
@@ -93,6 +96,9 @@ export function CompanyList() {
 
   const { formatDate, getDisplayValue, getDianStatus, getDianBadgeClass } = useCompanyUtils()
 
+  // NUEVO: Estado para modal de crear filtro
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+
   const handleCreateSuccess = () => {
     closeModal()
     loadCompanies()
@@ -119,6 +125,17 @@ export function CompanyList() {
     handleRemoveFilter(filter)
   }
 
+  // NUEVO: Manejar creación de filtro desde modal
+  const handleCreateFilter = async (filterName: string): Promise<boolean> => {
+    const success = await handleAddFilter(filterName)
+    return success
+  }
+
+  const handleFilterSuccess = () => {
+    setIsFilterModalOpen(false)
+    setShowToast(true)
+  }
+
   return (
     <ToastProvider>
       <div className="w-full p-6 space-y-6">
@@ -139,7 +156,11 @@ export function CompanyList() {
           resetFilterInput={resetFilterInput}
           showAllPasswords={showAllPasswords}
           toggleAllPasswords={toggleAllPasswords}
-          openCreateModal={openCreateModal} showAddFilter={false}        />
+          openCreateModal={openCreateModal}
+          showAddFilter={false}
+          // NUEVO: Función para abrir modal de filtro
+          onOpenFilterModal={() => setIsFilterModalOpen(true)}
+        />
 
         <CompanyTable
           hasCompanies={hasCompanies}
@@ -185,6 +206,7 @@ export function CompanyList() {
           />
         )}
 
+        {/* Modal para crear/editar empresa */}
         <SlideModal
           isOpen={isModalOpen}
           onClose={closeModal}
@@ -195,6 +217,28 @@ export function CompanyList() {
             onCancel={closeModal}
             onSuccess={handleCreateSuccess}
             editingCompany={editingCompany}
+            customFilters={customFilters}
+          />
+        </SlideModal>
+
+        {/* NUEVO: Modal para crear filtro personalizado */}
+        <SlideModal
+          isOpen={isFilterModalOpen}
+          onClose={() => {
+            setIsFilterModalOpen(false)
+            // Refresh filters when the modal is closed
+            loadFiltersFromDB()
+          }}
+          title="Crear Filtro Personalizado"
+        >
+          <CreateCustomFilterForm
+            onSubmit={handleCreateFilter}
+            onCancel={() => {
+              setIsFilterModalOpen(false)
+              // Refresh filters when the modal is closed
+              loadFiltersFromDB()
+            }}
+            onSuccess={handleFilterSuccess}
           />
         </SlideModal>
       </div>
