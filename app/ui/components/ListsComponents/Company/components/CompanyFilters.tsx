@@ -42,24 +42,6 @@ export function CompanyFilters({
               <SelectItem key={filter} value={filter}>
                 <div className="flex justify-between items-center w-full">
                   <span className="flex-1">{filter}</span>
-                  {!isDefaultFilter && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-5 w-5 p-0 opacity-70 hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground ml-2 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setFilterToRemove(filter)
-                      }}
-                      disabled={isRemoving}
-                    >
-                      {isRemoving && filterToRemove === filter ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <X className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  )}
                 </div>
               </SelectItem>
             )
