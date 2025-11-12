@@ -112,8 +112,8 @@ export function CompanyList() {
     return handleCreateCompany(companyData, isEditMode, editingCompany)
   }
 
-  const onAddFilterClick = () => {
-    const success = handleAddFilter(newFilterName)
+  const onAddFilterClick = async () => {
+    const success = await handleAddFilter(newFilterName)
     if (success) {
       resetFilterInput()
     }
