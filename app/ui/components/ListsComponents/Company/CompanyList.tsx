@@ -5,7 +5,6 @@ import { CompanyHeader } from './components/CompanyHeader'
 import { CompanyControls } from './components/CompanyControls'
 import { CompanyTable } from './components/CompanyTable'
 import { CompanyPagination } from './components/CompanyPagination'
-import { CompanyToast } from './components/CompanyToast'
 
 import { SlideModal } from "../../ModalComponents/slideModal"
 import { CreateCompanyForm } from "../../ModalComponents/createCompany"
@@ -84,19 +83,8 @@ export function CompanyList() {
   
   const isItemDuplicating = (id: string) => isDuplicating === id
 
-  const {
-    setShowAddFilter,
-    newFilterName,
-    setNewFilterName,
-    showToast,
-    setShowToast,
-    handleNewFilterClick,
-    resetFilterInput
-  } = useCompanyFiltersUI()
-
   const { formatDate, getDisplayValue, getDianStatus, getDianBadgeClass } = useCompanyUtils()
 
-  // NUEVO: Estado para modal de crear filtro
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
 
   const handleCreateSuccess = () => {
@@ -112,20 +100,12 @@ export function CompanyList() {
     return handleCreateCompany(companyData, isEditMode, editingCompany)
   }
 
-  const onAddFilterClick = async () => {
-    const success = await handleAddFilter(newFilterName)
-    if (success) {
-      resetFilterInput()
-    }
-  }
-
   const onRemoveFilter = (filter: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     handleRemoveFilter(filter)
   }
 
-  // NUEVO: Manejar creación de filtro desde modal
   const handleCreateFilter = async (filterName: string): Promise<boolean> => {
     const success = await handleAddFilter(filterName)
     return success
@@ -133,7 +113,6 @@ export function CompanyList() {
 
   const handleFilterSuccess = () => {
     setIsFilterModalOpen(false)
-    setShowToast(true)
   }
 
   return (
@@ -147,18 +126,10 @@ export function CompanyList() {
           selectedFilter={selectedFilter}
           setSelectedFilter={setSelectedFilter}
           customFilters={customFilters}
-          onRemoveFilter={onRemoveFilter}
-          setShowAddFilter={setShowAddFilter}
-          newFilterName={newFilterName}
-          setNewFilterName={setNewFilterName}
-          onAddFilterClick={onAddFilterClick}
-          handleNewFilterClick={handleNewFilterClick}
-          resetFilterInput={resetFilterInput}
+          onRemoveFilter={onRemoveFilter} 
           showAllPasswords={showAllPasswords}
           toggleAllPasswords={toggleAllPasswords}
           openCreateModal={openCreateModal}
-          showAddFilter={false}
-          // NUEVO: Función para abrir modal de filtro
           onOpenFilterModal={() => setIsFilterModalOpen(true)}
         />
 
@@ -206,7 +177,6 @@ export function CompanyList() {
           />
         )}
 
-        {/* Modal para crear/editar empresa */}
         <SlideModal
           isOpen={isModalOpen}
           onClose={closeModal}
@@ -221,12 +191,10 @@ export function CompanyList() {
           />
         </SlideModal>
 
-        {/* NUEVO: Modal para crear filtro personalizado */}
         <SlideModal
           isOpen={isFilterModalOpen}
           onClose={() => {
             setIsFilterModalOpen(false)
-            // Refresh filters when the modal is closed
             loadFiltersFromDB()
           }}
           title="Crear Filtro Personalizado"
@@ -235,15 +203,19 @@ export function CompanyList() {
             onSubmit={handleCreateFilter}
             onCancel={() => {
               setIsFilterModalOpen(false)
-              // Refresh filters when the modal is closed
               loadFiltersFromDB()
             }}
             onSuccess={handleFilterSuccess}
+            onDeleteFilter={async (filterName) => {
+              await handleRemoveFilter(filterName)
+              loadFiltersFromDB()
+              return true
+            }}
+            existingFilters={customFilters}
+            selectedFilter={selectedFilter}
           />
         </SlideModal>
       </div>
-
-      <CompanyToast showToast={showToast} setShowToast={setShowToast} />
       <ToastViewport />
     </ToastProvider>
   )

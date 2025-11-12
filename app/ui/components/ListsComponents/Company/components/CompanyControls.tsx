@@ -10,13 +10,6 @@ interface CompanyControlsProps {
   setSelectedFilter: (filter: string | null) => void;
   customFilters: string[];
   onRemoveFilter: (filter: string, e: React.MouseEvent) => void;
-  showAddFilter: boolean;
-  setShowAddFilter: (show: boolean) => void;
-  newFilterName: string;
-  setNewFilterName: (name: string) => void;
-  onAddFilterClick: () => void;
-  handleNewFilterClick: () => void;
-  resetFilterInput: () => void;
   showAllPasswords: boolean;
   toggleAllPasswords: () => void;
   openCreateModal: () => void;
@@ -30,13 +23,6 @@ export function CompanyControls({
   setSelectedFilter,
   customFilters,
   onRemoveFilter,
-  showAddFilter,
-  setShowAddFilter,
-  newFilterName,
-  setNewFilterName,
-  onAddFilterClick,
-  handleNewFilterClick,
-  resetFilterInput,
   showAllPasswords,
   toggleAllPasswords,
   openCreateModal,
@@ -60,9 +46,9 @@ export function CompanyControls({
           title={showAllPasswords ? "Ocultar contraseñas" : "Mostrar contraseñas"}
         >
           {showAllPasswords ? (
-            <EyeOff className="h-4 w-4" />
+            <EyeOff className="h-4 w-4 text-white" />
           ) : (
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4 text-white" />
           )}
         </Button>
       </div>
@@ -72,22 +58,16 @@ export function CompanyControls({
           setSelectedFilter={setSelectedFilter}
           customFilters={customFilters}
           onRemoveFilter={onRemoveFilter}
-          showAddFilter={false}
-          setShowAddFilter={() => {}}
-          newFilterName=""
-          setNewFilterName={() => {}}
-          onAddFilterClick={() => {}}
-          handleNewFilterClick={() => {}}
           resetFilterInput={() => {}}
         />
       <div className="flex gap-2">
         <Button
           variant="outline"
           onClick={onOpenFilterModal}
-          className="gap-2"
+          className="gap-2 bg-secondary/50 border-border text-white hover:bg-secondary/70"
         >
-          <Filter className="h-4 w-4" />
-          Nuevo Filtro
+          <Filter className="h-4 w-4 text-white" />
+          Opciones De Filtro
         </Button>
 
         <Button
