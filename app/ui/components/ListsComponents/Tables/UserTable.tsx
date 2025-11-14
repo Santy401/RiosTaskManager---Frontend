@@ -15,6 +15,8 @@ import { AddUserForm } from "../../ModalComponents/createUser"
 import { useUser } from "@/app/presentation/hooks/User/useUser"
 import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu';
 import { ContextMenu } from "../ActionsMenu/ContextMenu"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 interface User {
   id: string;
@@ -78,6 +80,7 @@ export function UsersTable() {
             console.log('🗑️ [TABLE] Eliminando usuario:', userId);
             await deleteUser(userId);
 
+            toast.success('Usuario eliminado exitosamente')
             console.log('🔄 [TABLE] Usuario eliminado, recargando lista...');
             setTimeout(() => {
               loadUsers();
@@ -126,9 +129,11 @@ export function UsersTable() {
     try {
       await createUser(userData);
       return true;
+      toast.success('Usuario creado exitosamente')
     } catch (error) {
       console.error('Error creando usuario:', error);
       return false;
+      toast.error('Error al crear usuario')
     }
   };
 
@@ -139,6 +144,7 @@ export function UsersTable() {
       setTimeout(() => {
       loadUsers();
     }, 300);
+    toast.success('Usuario creado exitosamente')
   }
 
   // Paginación
@@ -153,6 +159,8 @@ export function UsersTable() {
 
 
   return (
+    <>
+    <ToastContainer position="bottom-right" theme="dark" />
     <div className="w-full p-6 space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold text-foreground">Usuarios</h1>
@@ -360,5 +368,6 @@ export function UsersTable() {
         />
       </SlideModal>
     </div>
+    </>
   )
 }

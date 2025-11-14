@@ -19,8 +19,10 @@ import { useCompanyPagination } from '@/app/presentation/hooks/Company/hooks/use
 import { usePasswordVisibility } from '@/app/presentation/hooks/Company/hooks/usePasswordVisibility'
 import { useCompanyModal } from '@/app/presentation/hooks/Company/hooks/useCompanyModal'
 import { useCompanyActions } from '@/app/presentation/hooks/Company/hooks/useCompanyActions'
-import { useCompanyFiltersUI } from '@/app/presentation/hooks/Company/hooks/useCompanyFiltersUI'
 import { useCompanyUtils } from '@/app/presentation/hooks/Company/hooks/useCompanyUtils'
+
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 import { CompanyFormData } from '@/app/domain/entities/Company'
 
@@ -90,6 +92,7 @@ export function CompanyList() {
   const handleCreateSuccess = () => {
     closeModal()
     loadCompanies()
+    toast.success('Empresa creada exitosamente')
   }
 
   const onMenuAction = (action: string, companyId: string, companyName: string) => {
@@ -104,6 +107,7 @@ export function CompanyList() {
     e.preventDefault()
     e.stopPropagation()
     handleRemoveFilter(filter)
+    toast.success('Filtro eliminado exitosamente')
   }
 
   const handleCreateFilter = async (filterName: string): Promise<boolean> => {
@@ -113,9 +117,12 @@ export function CompanyList() {
 
   const handleFilterSuccess = () => {
     setIsFilterModalOpen(false)
+    toast.success('Filtro creado exitosamente')
   }
 
   return (
+    <>
+      <ToastContainer position="bottom-right" theme="dark" />
     <ToastProvider>
       <div className="w-full p-6 space-y-6">
         <CompanyHeader totalCompanies={companies.length} />
@@ -218,5 +225,6 @@ export function CompanyList() {
       </div>
       <ToastViewport />
     </ToastProvider>
+    </>
   )
 }

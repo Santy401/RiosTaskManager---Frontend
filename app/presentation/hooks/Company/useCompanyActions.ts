@@ -2,6 +2,7 @@ import { Company, CreateCompanyData } from "@/app/domain/entities/Company";
 import { useLoading } from '@/app/presentation/hooks/useLoading'
 import { useCompanyBase } from "./useCompanyBase";
 import { DeleteCompanyResponse } from "./types";
+import { toast } from "react-toastify"
 
 interface UseCompanyActionsResult {
     createCompany: (data: CreateCompanyData) => Promise<Company>;
@@ -15,11 +16,53 @@ export const useCompanyActions = (): UseCompanyActionsResult => {
     const { setLoading, setError } = useCompanyBase();
     const { addDeleting, removeDeleting, isDeleting } = useLoading();
 
+    const checkNitExists = async (nit: string): Promise<{exists: boolean, message?: string}> => {
+        try {
+            const response = await fetch(`/api/admin/companies/check-nit?nit=${encodeURIComponent(nit)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                return {
+                    exists: false,
+                    message: error.error || 'Error al verificar el NIT'
+                };
+            }
+
+            const result = await response.json();
+            return {
+                exists: result.exists || false,
+                message: result.exists ? 'El NIT ya está registrado' : undefined
+            };
+        } catch (error) {
+            console.error('Error al verificar NIT:', error);
+            return {
+                exists: false,
+                message: 'Error al conectar con el servidor'
+            };
+        }
+    };
+
     const createCompany = async (data: CreateCompanyData): Promise<Company> => {
         setLoading(true);
         setError(null);
 
         try {
+            console.log('🔄 [HOOK] Validando NIT de empresa...', data.nit);
+            
+            // Verificar si el NIT ya existe
+            const { exists: nitExists, message } = await checkNitExists(data.nit);
+            if (nitExists) {
+                const errorMessage = message || 'El NIT ya está registrado para otra empresa';
+                toast.error(errorMessage);
+                throw new Error(errorMessage);
+            }
+
             console.log('🔄 [HOOK] Creando empresa...', data);
 
             const response = await fetch('/api/admin/companies', {
@@ -40,6 +83,11 @@ export const useCompanyActions = (): UseCompanyActionsResult => {
                 try {
                     const errorData = JSON.parse(errorText);
                     errorMessage = errorData.error || errorMessage;
+                    
+                    // Si el error es por NIT duplicado (aunque ya lo validamos, por si acaso)
+                    if (errorData.code === 'P2002' && errorData.meta?.target?.includes('nit')) {
+                        errorMessage = 'El NIT ya está registrado para otra empresa';
+                    }
                 } catch {
                     errorMessage = errorText || `Error ${response.status}`;
                 }
@@ -49,13 +97,19 @@ export const useCompanyActions = (): UseCompanyActionsResult => {
 
             const newCompany = await response.json();
             console.log('✅ [HOOK] Empresa creada:', newCompany);
-
+            toast.success('Empresa creada exitosamente');
             return newCompany;
 
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             console.error('💥 [HOOK] Error en createCompany:', err);
             setError(errorMessage);
+            
+            // Solo mostrar toast si no es el error de NIT duplicado (ya se mostró antes)
+            if (!errorMessage.includes('NIT ya está registrado')) {
+                toast.error('Error al crear la empresa');
+            }
+            
             throw err;
         } finally {
             setLoading(false);
@@ -90,10 +144,12 @@ export const useCompanyActions = (): UseCompanyActionsResult => {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             console.error('💥 [HOOK] Error en deleteCompany:', err);
             setError(errorMessage);
+            toast.error('Error al eliminar empresa')
             throw err;
         } finally {
             removeDeleting(companyId);
             setLoading(false);
+            // toast.success('Empresa eliminada exitosamente')
         }
     };
 
@@ -140,9 +196,11 @@ export const useCompanyActions = (): UseCompanyActionsResult => {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             console.error('💥 [HOOK] Error en updateCompany:', err);
             setError(errorMessage);
+            toast.error('Error al actualizar empresa')
             throw err;
         } finally {
             setLoading(false);
+            toast.success('Empresa actualizada exitosamente')
         }
     };
 

@@ -16,16 +16,19 @@ interface CreateTaskFormProps {
   editingTask?: any | null;
 }
 
+// Helper function to get initial form state
+const getInitialFormData = (editingTask: any) => ({
+  name: editingTask?.name || "",
+  description: editingTask?.description || "",
+  dueDate: editingTask?.dueDate ? new Date(editingTask.dueDate).toISOString().split('T')[0] : "",
+  status: editingTask?.status || "pendiente" as "pendiente" | "en_progreso" | "terminada",
+  companyId: editingTask?.companyId || editingTask?.company?.id || "",
+  areaId: editingTask?.areaId || editingTask?.area?.id || "",
+  userId: editingTask?.userId || editingTask?.user?.id || "",
+});
+
 export function CreateTaskForm({ onSubmit, onCancel, onSuccess, editingTask }: CreateTaskFormProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    dueDate: "",
-    status: "pendiente" as "pendiente" | "en_progreso" | "terminada",
-    companyId: "",
-    areaId: "",
-    userId: "",
-  })
+  const [formData, setFormData] = useState(() => getInitialFormData(editingTask))
 
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -85,19 +88,10 @@ export function CreateTaskForm({ onSubmit, onCancel, onSuccess, editingTask }: C
     loadSelectData();
   }, []); // ✅ Solo se ejecuta una vez
 
-  // ✅ Cargar datos iniciales para edición
+  // Update form data when editingTask changes
   useEffect(() => {
     if (editingTask) {
-      const isoDate = editingTask.dueDate ? new Date(editingTask.dueDate).toISOString().split('T')[0] : ""
-      setFormData({
-        name: editingTask.name || "",
-        description: editingTask.description || "",
-        dueDate: isoDate,
-        status: editingTask.status || "pendiente",
-        companyId: editingTask.companyId || editingTask.company?.id || "",
-        areaId: editingTask.areaId || editingTask.area?.id || "",
-        userId: editingTask.userId || editingTask.user?.id || "",
-      });
+      setFormData(getInitialFormData(editingTask));
     }
   }, [editingTask]);
 

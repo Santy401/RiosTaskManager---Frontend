@@ -1,6 +1,8 @@
 import { useAreaBase } from "./useAreaBase";
 import { useLoading } from '@/app/presentation/hooks/useLoading'
 import { DeleteAreaResponse } from "./types";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface UseAreaActionsResult {
     createArea: (data: CreateAreaData) => Promise<Area>;
@@ -67,7 +69,7 @@ export const useAreaActions = (): UseAreaActionsResult => {
         setError(null);
 
         try {
-            console.log('🗑️ [HOOK] Eliminando area:', areaId);
+            console.log('🗑️ [HOOK] Eliminando área:', areaId);
 
             const response = await fetch(`/api/admin/areas/${areaId}`, {
                 method: 'DELETE',
@@ -77,18 +79,44 @@ export const useAreaActions = (): UseAreaActionsResult => {
             console.log('📥 [HOOK] Response status:', response.status);
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Error al eliminar area');
+                const errorText = await response.text();
+                let errorMessage = 'Error al eliminar el área';
+                
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.error || errorMessage;
+                    
+                    // Check if this is a constraint error (related items exist)
+                    if (response.status === 400 && errorData.code === 'P2003') {
+                        toast.error('No se puede eliminar el área porque tiene elementos relacionados');
+                        return { 
+                            success: false, 
+                            message: 'No se puede eliminar el área porque tiene elementos relacionados',
+                            deletedAreaId: areaId 
+                        };
+                    }
+                } catch {
+                    errorMessage = errorText || `Error ${response.status}`;
+                }
+                
+                throw new Error(errorMessage);
             }
 
             const result = await response.json();
-            console.log('✅ [HOOK] area eliminada exitosamente:', result);
-            return result;
+            console.log('✅ [HOOK] Área eliminada exitosamente:', result);
+            
+            toast.success('Área eliminada exitosamente');
+            return { 
+                success: true, 
+                message: 'Área eliminada exitosamente', 
+                deletedAreaId: areaId 
+            };
 
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-            console.error('💥 [HOOK] Error en deleteCompany:', err);
+            console.error('💥 [HOOK] Error en deleteArea:', err);
             setError(errorMessage);
+            toast.error('Error al eliminar el área');
             throw err;
         } finally {
             removeDeleting(areaId);

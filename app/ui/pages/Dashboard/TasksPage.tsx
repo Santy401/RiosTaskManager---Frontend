@@ -18,6 +18,8 @@ import { TaskTable } from "../../components/TaskComponents/TaskTable"
 
 import type { Task } from "@/app/presentation/hooks/Task/type"
 
+import { ToastContainer, toast } from "react-toastify"
+
 interface CreateTaskFormData {
   name: string
   description: string
@@ -143,12 +145,14 @@ export function TasksPage() {
 
         case 'delete':
           await actionHandlers.deleteTask(itemId)
+          toast.success('Tarea eliminada exitosamente')
           break
 
         case 'duplicate': {
           const taskToDuplicate = tasks.find(task => task.id === itemId)
           if (taskToDuplicate) {
             await actionHandlers.duplicateTask(taskToDuplicate)
+            toast.success('Tarea duplicada exitosamente')
           }
           break
         }
@@ -158,6 +162,7 @@ export function TasksPage() {
       }
     } catch (error) {
       console.error('Error en acción del menú:', error)
+      toast.error('Error al realizar la acción')
     }
   }
 
@@ -184,6 +189,7 @@ export function TasksPage() {
     setEditingTask(null)
     setIsEditMode(false)
     void loadTasks()
+    toast.success('Tarea creada exitosamente')
   }
 
   const handleAddTaskClick = (): void => {
@@ -199,8 +205,10 @@ export function TasksPage() {
         data: { status: newStatus }
       })
       await loadTasks()
+      toast.success('Estado de tarea actualizado exitosamente')
     } catch (error) {
       console.error('Error al actualizar estado de tarea:', error)
+      toast.error('Error al actualizar estado de tarea')
     }
   }
 
@@ -216,6 +224,8 @@ export function TasksPage() {
   }
 
   return (
+    <>
+    <ToastContainer position="bottom-right" theme="dark"/>
     <div className="w-full p-6 space-y-6">
       <TaskHeader
         taskCount={filteredTasks.length}
@@ -291,5 +301,6 @@ export function TasksPage() {
         />
       </SlideModal>
     </div>
+    </>
   )
 }

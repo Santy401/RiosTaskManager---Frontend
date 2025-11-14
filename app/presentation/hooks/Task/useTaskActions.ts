@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { useTaskBase } from "./useTaskBase";
-import { useLoading } from '@/app/presentation/hooks/useLoading'
+import { useLoading } from '@/app/presentation/hooks/useLoading';
+import { useEntityActions } from '@/app/presentation/hooks/useEntityActions';
 import { Task, CreateTaskData, UpdateTaskData, DeleteTaskResponse } from "./type";
+import { toast } from "react-toastify";
 
 interface UseTaskActionsResult {
     createTask: (data: CreateTaskData) => Promise<Task>;
@@ -12,12 +15,16 @@ interface UseTaskActionsResult {
 }
 
 export const useTaskActions = (loadTasks?: () => Promise<void>): UseTaskActionsResult => {
-    const { setLoading, setError } = useTaskBase();
+    const { setLoading } = useTaskBase();
     const { addDeleting, removeDeleting, isDeleting } = useLoading();
+    const { deleteEntity } = useEntityActions();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const createTask = async (data: CreateTaskData): Promise<Task> => {
         setLoading(true);
         setError(null);
+        setIsLoading(true);
 
         try {
             console.log('🔄 [HOOK] Creando tarea...', data);
@@ -56,9 +63,14 @@ export const useTaskActions = (loadTasks?: () => Promise<void>): UseTaskActionsR
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             console.error('💥 [HOOK] Error en createTask:', err);
             setError(errorMessage);
+            toast.error('Error al crear tarea');
             throw err;
         } finally {
             setLoading(false);
+            setIsLoading(false);
+            if (!error) {
+                toast.success('Tarea creada exitosamente');
+            }
         }
     }
 
@@ -66,6 +78,7 @@ export const useTaskActions = (loadTasks?: () => Promise<void>): UseTaskActionsR
         addDeleting(taskId);
         setLoading(true);
         setError(null);
+        setIsLoading(true);
 
         try {
             console.log('🗑️ [HOOK] Eliminando tarea:', taskId);
@@ -78,28 +91,60 @@ export const useTaskActions = (loadTasks?: () => Promise<void>): UseTaskActionsR
             console.log('📥 [HOOK] Response status:', response.status);
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Error al eliminar tarea');
+                const errorText = await response.text();
+                let errorMessage = 'Error al eliminar la tarea';
+                
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.error || errorMessage;
+                    
+                    // Check if this is a constraint error (related items exist)
+                    if (response.status === 400 && errorData.code === 'P2003') {
+                        toast.error('No se puede eliminar la tarea porque tiene elementos relacionados');
+                        return { 
+                            success: false, 
+                            message: 'No se puede eliminar la tarea porque tiene elementos relacionados',
+                            deletedTaskId: taskId 
+                        };
+                    }
+                } catch {
+                    errorMessage = errorText || `Error ${response.status}`;
+                }
+                
+                throw new Error(errorMessage);
             }
 
             const result = await response.json();
             console.log('✅ [HOOK] Tarea eliminada exitosamente:', result);
-            return result;
-
+            
+            if (loadTasks) {
+                console.log('🔄 [HOOK] Actualizando lista de tareas...');
+                await loadTasks();
+            }
+            
+            toast.success('Tarea eliminada exitosamente');
+            return { 
+                success: true, 
+                message: 'Tarea eliminada exitosamente', 
+                deletedTaskId: taskId 
+            };
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             console.error('💥 [HOOK] Error en deleteTask:', err);
             setError(errorMessage);
+            toast.error('Error al eliminar la tarea');
             throw err;
         } finally {
             removeDeleting(taskId);
             setLoading(false);
+            setIsLoading(false);
         }
     }
 
     const updateTask = async (params: { taskId: string; data: UpdateTaskData }): Promise<Task> => {
         setLoading(true);
         setError(null);
+        setIsLoading(true);
 
         const { taskId, data } = params;
 
@@ -140,9 +185,14 @@ export const useTaskActions = (loadTasks?: () => Promise<void>): UseTaskActionsR
             const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
             console.error('💥 [HOOK] Error en updateTask:', err);
             setError(errorMessage);
+            toast.error('Error al actualizar tarea');
             throw err;
         } finally {
             setLoading(false);
+            setIsLoading(false);
+            if (!error) {
+                toast.success('Tarea actualizada exitosamente');
+            }
         }
     }
 

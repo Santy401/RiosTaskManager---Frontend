@@ -14,6 +14,8 @@ import { CreateAreaForm } from "../../components/ModalComponents/createArea"
 import { useArea } from "@/app/presentation/hooks/Area/useArea"
 import { useContextMenu } from '@/app/presentation/hooks/Menu/useContextMenu'
 import { ContextMenu } from '@/app/ui/components/ListsComponents/ActionsMenu/ContextMenu'
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 interface Area {
   id: string;
@@ -122,6 +124,7 @@ export function AreaList() {
           if (confirm(`¿Eliminar el Área "${areaName}"?`)) {
             await deleteArea(areaId)
             await loadAreas()
+            toast.success('Área eliminada exitosamente')
           }
           break
         default:
@@ -140,6 +143,7 @@ export function AreaList() {
         // Modo edición - convertir datos para update
         const updateData = convertToUpdateData(formData);
         await updateArea({ areaId: editingArea.id, data: updateData })
+        toast.success('Área editada exitosamente')
       } else {
         // Modo creación - convertir datos para create
         const createData = convertToApiData(formData);
@@ -156,6 +160,8 @@ export function AreaList() {
     setIsModalOpen(false)
     // Recargar las áreas si es necesario
     void loadAreas()
+    // Toats de éxito
+    toast.success('Área creada exitosamente')
   }
 
   const handleAddAreaClick = (): void => {
@@ -165,6 +171,8 @@ export function AreaList() {
   }
 
   return (
+    <>
+    <ToastContainer theme="dark" position="bottom-right"/>
     <div className="w-full p-6 space-y-6">
       {/* Header */}
       <div className="space-y-2">
@@ -181,7 +189,7 @@ export function AreaList() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-md bg-secondary/50 border-border text-white"
           />
-          <Select value={filterEstado} onValueChange={setFilterEstado}>
+          {/* <Select value={filterEstado} onValueChange={setFilterEstado}>
             <SelectTrigger className="w-[180px] bg-secondary/50 border-border text-white">
               <SelectValue placeholder="Filtrar por estado" />
             </SelectTrigger>
@@ -190,13 +198,7 @@ export function AreaList() {
               <SelectItem value="activo">Activas</SelectItem>
               <SelectItem value="inactivo">Inactivas</SelectItem>
             </SelectContent>
-          </Select>
-          <div className="flex items-center gap-2">
-            <Switch
-              className="data-[state=checked]:bg-emerald-500"
-            />
-            <span className="text-sm text-foreground">Mostrar solo activas</span>
-          </div>
+          </Select> */}
         </div>
         <Button
           className="bg-primary text-primary-foreground hover:bg-primary/90"
@@ -401,5 +403,6 @@ export function AreaList() {
         />
       </SlideModal>
     </div>
+    </>
   )
 }
