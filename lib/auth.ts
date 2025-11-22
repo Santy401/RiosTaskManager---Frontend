@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
+import { env } from './env';
 
 export async function verifyToken(req: NextRequest) {
   // Usar SOLO auth-token
@@ -13,7 +14,7 @@ export async function verifyToken(req: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const secret = new TextEncoder().encode(env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
 
     const userPayload = payload as any;

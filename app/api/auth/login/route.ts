@@ -1,9 +1,8 @@
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
+import { env } from '@/lib/env';
 
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({
@@ -24,7 +23,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!user) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
-    const isPasswordValid = await bcrypt.compare(password, user.password || '');
+
+    if (!user.password) {
+      return NextResponse.json({ error: 'Usuario inválido' }, { status: 400 });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Contraseña incorrecta' }, { status: 401 });
     }
@@ -33,7 +37,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('24h')
       .setIssuedAt()
-      .sign(new TextEncoder().encode(process.env.JWT_SECRET));
+      .sign(new TextEncoder().encode(env.JWT_SECRET));
 
     console.log('JWT token created for user:', user.email, 'Role:', user.role);
 
