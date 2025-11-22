@@ -4,26 +4,26 @@ import { jwtVerify } from 'jose';
 export async function verifyToken(req: NextRequest) {
   // Usar SOLO auth-token
   const token = req.cookies.get('auth-token')?.value;
-  
+
   console.log('🔐 Cookie auth-token encontrada:', !!token);
   console.log('🔐 Token:', token ? `${token.substring(0, 20)}...` : 'NO HAY TOKEN');
-  
+
   if (!token) {
     return { error: 'No autorizado', status: 401 };
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    
+
     const userPayload = payload as any;
-    
+
     if (!userPayload.id || !userPayload.email || !userPayload.role) {
       return { error: 'Token inválido: faltan propiedades', status: 401 };
     }
-    
+
     console.log('✅ Usuario verificado:', userPayload.email, userPayload.role);
-    return { 
+    return {
       user: {
         id: String(userPayload.id),
         email: String(userPayload.email),

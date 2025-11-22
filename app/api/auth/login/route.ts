@@ -33,7 +33,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('24h')
       .setIssuedAt()
-      .sign(new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret'));
+      .sign(new TextEncoder().encode(process.env.JWT_SECRET));
 
     console.log('JWT token created for user:', user.email, 'Role:', user.role);
 
