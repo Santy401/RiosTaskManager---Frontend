@@ -11,7 +11,6 @@ export async function getAllTasks() {
                 status: true,
                 createdAt: true,
                 updatedAt: true,
-                // ✅ Incluir las relaciones con los datos necesarios
                 company: {
                     select: {
                         id: true,
@@ -52,7 +51,6 @@ export async function createTask(taskData: {
     userId: string;
     dueDate: Date;
     status: string;
-    // ❌ createdAt y updatedAt se generan automáticamente
 }) {
     try {
         const newTask = await prisma.task.create({
@@ -64,7 +62,6 @@ export async function createTask(taskData: {
                 userId: taskData.userId,
                 dueDate: taskData.dueDate,
                 status: taskData.status,
-                // createdAt y updatedAt se generan automáticamente
             },
             select: {
                 id: true,
@@ -74,7 +71,6 @@ export async function createTask(taskData: {
                 status: true,
                 createdAt: true,
                 updatedAt: true,
-                // ✅ Incluir las relaciones en la respuesta
                 company: {
                     select: {
                         id: true,
@@ -104,7 +100,6 @@ export async function createTask(taskData: {
     }
 }
 
-// ✅ Función adicional para obtener tarea por ID
 export async function getTaskById(taskId: string) {
     try {
         const task = await prisma.task.findUnique({
@@ -146,7 +141,6 @@ export async function getTaskById(taskId: string) {
     }
 }
 
-// ✅ Función para actualizar tarea
 export async function updateTask(taskId: string, taskData: {
     name?: string;
     description?: string;
@@ -197,7 +191,6 @@ export async function updateTask(taskId: string, taskData: {
     }
 }
 
-// ✅ Función para eliminar tarea
 export async function deleteTask(taskId: string) {
     try {
         const deletedTask = await prisma.task.delete({
